@@ -4,8 +4,7 @@
 #include "column.h"
 #include "row.h"
 #include "schema.h"
-#include "row.h"
-#include "helper.h"
+#include "../helper.h"
 
 #include <cstdlib>
 #include <thread>
@@ -13,8 +12,8 @@
 #include <condition_variable>
 #include <sstream>
 #include <atomic>
-#include "object.h"
-#include "string.h"
+#include "../object.h"
+#include "../string.h"
 
 /** A Thread wraps the thread operations in the standard library.
  *  author: vitekj@me.com */
@@ -140,14 +139,14 @@ class DataFrame : public Object {
   }
 
   /** Adds a column this dataframe, updates the schema, the new column
-    * is external, and appears as the last column of the dataframe, the
-    * name is optional and external. A nullptr colum is undefined. */
-  void add_column(Column* col, String* name) {
+    * is external, and appears as the last column of the dataframe.
+    * A nullptr column is undefined. */
+  void add_column(Column* col) {
     assert(col != nullptr);
     // for however many rows there are that the schema doesn't have,
-    // add rows to the schema. Used for 1:1 mapping of rownames.
+    // add rows to the schema.
     for (size_t i = schema_->length(); i < col->size(); ++i) {
-      schema_->add_row(new String(""));
+      schema_->add_row();
     }
     // create new column of given column's type to copy over values
     char type = col->get_type();
@@ -170,7 +169,7 @@ class DataFrame : public Object {
       }
     }
     // add col to schema
-    schema_->add_column(type, name);
+    schema_->add_column(type);
 
     // add the new column into cols_ by copying values into a new column**
     Column** tmp = cols_;
@@ -194,6 +193,7 @@ class DataFrame : public Object {
       } else if (type == 'S') {
         c = new StringColumn();
       } else {
+        std::cout << type << std::endl;
         assert(false);
       }
       return c;
@@ -225,16 +225,6 @@ class DataFrame : public Object {
     return sc->get(row);
   }
 
-  /** Return the offset of the given column name or -1 if no such col. */
-  int get_col(String& col) {
-    return schema_->col_idx(col.c_str());
-  }
-
-  /** Return the offset of the given row name or -1 if no such row. */
-  int get_row(String& col) {
-    return schema_->row_idx(col.c_str());
-  }
-
   /** Set the value at the given column and row to the given value.
     * If the column is not  of the right type or the indices are out of
     * bound, the result is undefined. */
@@ -255,17 +245,6 @@ class DataFrame : public Object {
     assert(fc != nullptr);
     fc->set(row, val);
   }
-
-  /** Set the name of the given column. */
-  void set_col_name(size_t col, String* name) {
-    schema_->set_col_name(col, name);
-  }
-
-  /** Set the name of the given row. */
-  void set_row_name(size_t row, String* name) {
-    schema_->set_row_name(row, name);
-  }
-
 
   void set(size_t col, size_t row, String* val) {
     StringColumn* sc = cols_[col]->as_string();
@@ -302,7 +281,7 @@ class DataFrame : public Object {
    *  the right schema and be filled with values, otherwise undedined.  */
   void add_row(Row& row) {
     assert(row.schema_->equals(schema_));
-    schema_->add_row(new String(""));
+    schema_->add_row();
     for (size_t i = 0; i < schema_->width(); ++i) {
       char typ = schema_->col_type(i);
       if (typ == 'I') {
@@ -356,6 +335,7 @@ class DataFrame : public Object {
 
   /** Print the dataframe in SoR format to standard output. */
   void print() {
+    std::cout << "nothin" << std::endl;
     Print* p = new Print();
     map(*p);
     delete p;

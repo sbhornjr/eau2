@@ -1,7 +1,7 @@
 // lang::CwC
 
 #pragma once
-#include "string.h"
+#include "../string.h"
 #include <math.h>
 #include <stdarg.h>
 

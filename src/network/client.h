@@ -11,11 +11,11 @@
 #include <netdb.h>
 #include <string.h>
 #include <fcntl.h>
-#include "object.h"
-#include "string.h"
+#include "../object.h"
+#include "../string.h"
 #include "message.h"
-#include "array.h"
-#include "serial.h"
+#include "../array.h"
+#include "../serial.h"
 #include "socket.h"
 
 /**

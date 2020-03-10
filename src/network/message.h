@@ -1,9 +1,9 @@
 // lang::CwC
 
 #pragma once
-#include "object.h"
-#include "string.h"
-#include "array.h"
+#include "../object.h"
+#include "../string.h"
+#include "../array.h"
 #include <netinet/in.h>
 
 enum class MsgKind {Ack='a', Nack='n', Put='p',

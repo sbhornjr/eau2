@@ -1,7 +1,7 @@
 // lang::CwC
 
 #pragma once
-#include "string.h"
+#include "../string.h"
 #include "column.h"
 #include <string.h>
 
@@ -10,8 +10,7 @@
 /*************************************************************************
  * Schema::
  * A schema is a description of the contents of a data frame, the schema
- * knows the number of columns and number of rows, the type of each column,
- * optionally columns and rows can be named by strings.
+ * knows the number of columns and number of rows, the type of each column.
  * The valid types are represented by the chars 'S', 'B', 'I' and 'F'.
  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
  */
@@ -21,8 +20,6 @@ class Schema : public Object {
   size_t numrows_;          // the num of rows in the df
   size_t numcols_;          // the num of cols in the schema
   String* types_;           // String representing the types of the schema
-  StringColumn* colnames_;  // the names of the cols (1:1 idx mapping)
-  StringColumn* rownames_;  // the names or the rows (1:1 idx mapping)
  
   /** Copying constructor.
    *  Rows are not carried over.
@@ -32,13 +29,6 @@ class Schema : public Object {
     numrows_ = 0;
     numcols_ = from.numcols_;
     types_ = new String(*from.types_);
-    colnames_ = new StringColumn();
-    
-    // populate colnames so that column names are carried over
-    for (size_t i = 0; i < numcols_; ++i) {
-      colnames_->push_back(from.colnames_->get(i));
-    }
-    rownames_ = new StringColumn();
   }
  
   /** Create an empty schema **/
@@ -46,8 +36,6 @@ class Schema : public Object {
     numrows_ = 0;
     numcols_ = 0;
     types_ = new String("");
-    colnames_ = new StringColumn();
-    rownames_ = new StringColumn();
   }
  
   /** Create a schema from a string of types. A string that contains
@@ -64,20 +52,11 @@ class Schema : public Object {
     numrows_ = 0;
     types_ = new String(types);
     numcols_ = types_->size();
-    colnames_ = new StringColumn();
-
-    // initialize colnames with empty strings to ensure 1:1 mapping
-    for (size_t i = 0; i < numcols_; ++i) {
-      colnames_->push_back(new String(""));
-    }
-    rownames_ = new StringColumn();
   }
 
   // destructor - delete types and name columns
   ~Schema() {
     delete types_;
-    delete colnames_;
-    delete rownames_;
   }
 
   /**
@@ -104,12 +83,10 @@ class Schema : public Object {
     return hash;
   }
  
-  /** Add a column of the given type and name (can be nullptr), name
-    * is external. */
-  void add_column(char typ, String* name) {
+  /** Add a column of the given type */
+  void add_column(char typ) {
     // make sure the type is valid
     assert(typ == 'I' || typ == 'B' || typ == 'F' || typ == 'S');
-    colnames_->push_back(name);
     ++numcols_;
     
     // append the typ onto our types string
@@ -122,59 +99,14 @@ class Schema : public Object {
     types_ = newtypes;
   }
  
-  /** Add a row with a name (possibly nullptr), name is external. */
-  void add_row(String* name) {
+  /** Add a row */
+  void add_row() {
     ++numrows_;
-    rownames_->push_back(name);
-  }
- 
-  /** Return name of row at idx; nullptr indicates no name. An idx >= width
-    * is undefined. */
-  String* row_name(size_t idx) {
-    return rownames_->get(idx);
-  }
- 
-  /** Return name of column at idx; nullptr indicates no name given.
-    *  An idx >= width is undefined.*/
-  String* col_name(size_t idx) {
-    return colnames_->get(idx);
   }
  
   /** Return type of column at idx. An idx >= width is undefined. */
   char col_type(size_t idx) {
     return types_->at(idx);
-  }
-
-  /** Set the name of the column at idx. */
-  void set_col_name(size_t idx, String* name) {
-    colnames_->set(idx, name);
-  }
-
-  /** Set the name of the row at idx. */
-  void set_row_name(size_t idx, String* name) {
-    rownames_->set(idx, name);
-  }
- 
-  /** Given a column name return its index, or -1. */
-  int col_idx(const char* name) {
-    for (size_t i = 0; i < numcols_; ++i) {
-      String* n = colnames_->get(i);
-      if (strcmp(name, n->c_str()) == 0) {
-        return i;
-      }
-    }
-    return -1;
-  }
- 
-  /** Given a row name return its index, or -1. */
-  int row_idx(const char* name) {
-    for (size_t i = 0; i < numrows_; ++i) {
-      String* n = rownames_->get(i);
-      if (strcmp(name, n->c_str()) == 0) {
-        return i;
-      }
-    }
-    return -1;
   }
  
   /** The number of columns */
