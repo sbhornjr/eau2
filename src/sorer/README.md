@@ -17,6 +17,7 @@ Our implementation of sorer is defined by 5 major sections:
     and of size 2 for the other 2.
 
 2. Finding the Golden Row
+
     To find rows within the first 500 rows that contain the most amount
     of valid fields, we scan through each of the rows. If we find a field in
     the row that is invalid (e.g. <h i>, <"hi"a>, etc.), then the row is not
