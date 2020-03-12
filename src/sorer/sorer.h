@@ -16,6 +16,7 @@ public:
     string filename, longest_line;
     size_t from, len;
     Schema* schema;
+    vector<string> goodrows;
 
     Sorer(string filename)
     : filename(filename) {
@@ -27,9 +28,8 @@ public:
         file_len.close();
         len = fsize;
         from = 0;
-
-        longest_line = find_golden_row();
-        schema = make_schema();
+        find_golden_row();
+        find_bool_int_true_schema();
     }
 
     Sorer(string filename, size_t from, int len)
@@ -42,13 +42,63 @@ public:
             file_len.close();
             len = fsize;
         }
-        longest_line = find_golden_row();
-        schema = make_schema();
+        find_golden_row();
+        find_bool_int_true_schema();
     }
 
     ~Sorer() {
         delete schema;
     }
+
+    // Function that returns count of the given
+    // character in the string
+    // Source: https://www.geeksforgeeks.org/program-count-occurrence-given-character-string/
+    int count(char* s, const char c)
+    {
+      // Count variable
+      int res = 0;
+
+      for (size_t i=0;i<strlen(s);i++)
+      // checking character in string
+        if (s[i] == c) res++;
+      return res;
+    }
+
+    /**
+     * Finds the correct schema and sets it.
+     * Often times boolean and integer schemas can be mistaken.
+     * 1 and 0 are both integer/booleans.
+     * This method solves the problem by choosing the row with the least
+     * amount of booleans in it.
+     * authors: horn.s@husky.neu.edu, armani.a@husky.neu.edu
+     **/
+     void find_bool_int_true_schema() {
+       // compare to two rows of the same size to find correct schema.
+       if(goodrows.size() > 1) {
+         srand (time(NULL));
+         int rand1 = rand() % (goodrows.size() + 1);
+         int rand2 = rand() % (goodrows.size() + 1);
+         if (rand1 == rand2) {
+           rand1 = rand() % (goodrows.size() + 1);
+           rand2 = rand() % (goodrows.size() + 1);
+         }
+         longest_line = goodrows.at(rand1);
+         Schema* temp1 = make_schema();
+         longest_line = goodrows.at(rand2);
+         Schema* temp2 = make_schema();
+         if (count(temp2->types_->c_str(), 'B') < count(temp1->types_->c_str(), 'B')) {
+           delete temp2;
+           schema = temp1;
+         } else {
+           delete temp1;
+           schema = temp2;
+         }
+         goodrows.clear();
+       } else {
+         schema = make_schema();
+         goodrows.clear();
+       }
+     }
 
     /**
      * scans the first 500 lines and returns the row number
@@ -130,11 +180,16 @@ public:
                 if ((well_formed && fields > longest_line_length)
                 || (well_formed && fields == longest_line_length &&
                     empty_fields < longest_line_empties)) {
-
+                    goodrows.clear();
                     longest_line_length = fields;
                     longest_line_empties = empty_fields;
                     longest_str = line;
+                    goodrows.push_back(line);
+                } else if (well_formed && fields == longest_line_length &&
+                empty_fields == longest_line_empties) {
+                  goodrows.push_back(line);
                 }
+
             }
             file.close();
         } else {
@@ -150,6 +205,7 @@ public:
      * authors: horn.s@husky.neu.edu, armani.a@husky.neu.edu
      */
     Schema* make_schema() {
+
         string line = longest_line;
         string types = "";
         // loop through characters

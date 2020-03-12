@@ -16,11 +16,12 @@ Our implementation of sorer is defined by 5 major sections:
     and of size 2 for the other 2.
 
 2. Finding the Golden Row
-    To find the row within the first 500 rows that contains the most amount
+    To find rows within the first 500 rows that contain the most amount
     of valid fields, we scan through each of the rows. If we find a field in
-    the row that is invalid (e.g. <h i>, <"hi"a>, etc.), then the row is not 
-    considered. Otherwise, the line number of the longest row with the least
-    amount of empty fields is saved.
+    the row that is invalid (e.g. <h i>, <"hi"a>, etc.), then the row is not
+    considered. Otherwise, the longest row with the least amount of empty
+    fields is saved to a vector. The vector will later be used to differentiate
+    between Integers and Booleans in schemas. (0's and 1's are both types).
 
 3. Inferring a Schema
     To infer a schema, we loop through the file again until we get to the
@@ -52,4 +53,3 @@ Our implementation of sorer is defined by 5 major sections:
     vector. The other two can access database[arg1][arg2] to get the desired
     object. print_col_idx prints that object, and is_missing_idx checks
     if that object is "".
-
