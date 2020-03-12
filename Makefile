@@ -1,5 +1,41 @@
 build:
+	clear
+	clear
+	docker build -t cs4500:0.1 .
+	- rm -rf ./tests/test-data
+	mkdir ./tests/test-data
+	cd ./src; cp -r dataframe sorer ../tests/test-data
+	cd ./src; cp *.h ../tests/test-data
+	cd ./tests; cp main.cpp Makefile ./test-data
+	cd ./data; cp data.sor ../tests/test-data
+	clear
+	docker run -ti -v "`pwd`":/test cs4500:0.1 bash -c "cd test/tests/test-data; make build"
 
 test:
+	clear
+	clear
+	docker build -t cs4500:0.1 .
+	- rm -rf ./tests/test-data
+	mkdir ./tests/test-data
+	cd ./src; cp -r dataframe sorer ../tests/test-data
+	cd ./src; cp *.h ../tests/test-data
+	cd ./tests; cp main.cpp Makefile ./test-data
+	cd ./data; cp data.sor ../tests/test-data
+	clear
+	docker run -ti -v "`pwd`":/test cs4500:0.1 bash -c "cd test/tests/test-data; make build && make test"
 
 valgr:
+	clear
+	clear
+	docker build -t cs4500:0.1 .
+	- rm -rf ./tests/test-data
+	mkdir ./tests/test-data
+	cd ./src; cp -r dataframe sorer ../tests/test-data
+	cd ./src; cp *.h ../tests/test-data
+	cd ./tests; cp main.cpp Makefile ./test-data
+	cd ./data; cp data.sor ../tests/test-data
+	clear
+	docker run -ti -v "`pwd`":/test cs4500:0.1 bash -c "cd test/tests/test-data; make build && make valgr"
+
+clean:
+	rm -rf ./tests/test-data

@@ -1,44 +1,48 @@
 // lang::CwC
 
 #pragma once
-#include "../string.h"
+#include "string.h"
 #include <math.h>
 #include <stdarg.h>
 
 /** @designers: vitekj@me.com, course staff */
 
 // class definitions
-class IntColumn;
-class BoolColumn;
-class FloatColumn;
-class StringColumn;
+class IntArray;
+class BoolArray;
+class FloatArray;
+class StringArray;
+class ByteArray;
 
 /**************************************************************************
- * Column ::
- * Represents one column of a data frame which holds values of a single type.
+ * Array ::
+ * Represents one Array of a data frame which holds values of a single type.
  * This abstract class defines methods overriden in subclasses. There is
- * one subclass per element type. Columns are mutable, equality is pointer
+ * one subclass per element type. Arrays are mutable, equality is pointer
  * equality.
  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
  */
-class Column : public Object {
+class Array : public Object {
 public:
     char type_; // one of 'I' (integer), 'B' (boolean), 'F' (float), 'S' (String*)
 
-    /** Type converters: Return same column under its actual type, or
+    /** Type converters: Return same Array under its actual type, or
      *  nullptr if of the wrong type.  */
 
-    // returns this Column as an IntColumn*, or nullptr if not an IntColumn*
-    virtual IntColumn* as_int() {return nullptr;}
+    // returns this Array as an IntArray*, or nullptr if not an IntArray*
+    virtual IntArray* as_int() {return nullptr;}
 
-    // returns this Column as a BoolColumn*, or nullptr if not a BoolColumn*
-    virtual BoolColumn* as_bool() {return nullptr;}
+    // returns this Array as a BoolArray*, or nullptr if not a BoolArray*
+    virtual BoolArray* as_bool() {return nullptr;}
 
-    // returns this Column as a FloatColumn*, or nullptr if not a FloatColumn*
-    virtual FloatColumn* as_float() {return nullptr;}
+    // returns this Array as a FloatArray*, or nullptr if not a FloatArray*
+    virtual FloatArray* as_float() {return nullptr;}
 
-    // returns this Column as a StringColumn*, or nullptr if not a StringColumn*
-    virtual StringColumn* as_string() {return nullptr;}
+    // returns this Array as a StringArray*, or nullptr if not a StringArray*
+    virtual StringArray* as_string() {return nullptr;}
+
+    // returns this Array as a ByteArray*, or nullptr if not a ByteArray*
+    virtual ByteArray* as_char() {return nullptr;}
 
     /** Type appropriate push_back methods. Calling the wrong method is
      * undefined behavior. **/
@@ -49,16 +53,17 @@ public:
     virtual void push_back(bool val) { assert(false); }
     virtual void push_back(float val) { assert(false); }
     virtual void push_back(String* val) { assert(false); }
+    virtual void push_back(char val) { assert(false); }
 
-    /** Returns the number of elements in the column. Pure virtual. */
+    /** Returns the number of elements in the Array. Pure virtual. */
     virtual size_t size() = 0;
 
-    /** Return the type of this column as a char: 'S', 'B', 'I' and 'F'. */
+    /** Return the type of this Array as a char: 'S', 'B', 'I' and 'F'. */
     char get_type() {
         return type_;
     }
 
-    /** set the type of this column
+    /** set the type of this Array
      * only should be called from the constructors of subclasses
      */
     void set_type_(char type) {
@@ -67,20 +72,20 @@ public:
 };
 
 /*************************************************************************
- * IntColumn::
+ * IntArray::
  * Holds primitive int values, unwrapped.
  * @authors: horn.s@husky.neu.edu, armani.a@husky.neu.edu
  */
-class IntColumn : public Column {
+class IntArray : public Array {
 public:
 
     int** arr_;         // internal array of int arrays
-    size_t num_arr_;    // number of int arrays in arr_ 
+    size_t num_arr_;    // number of int arrays in arr_
     size_t size_;       // number of ints total in arr_
 
 
-    // default constructor - initialize as an empty IntColumn
-    IntColumn() {
+    // default constructor - initialize as an empty IntArray
+    IntArray() {
         set_type_('I');
         size_ = 0;
         num_arr_ = 0;
@@ -92,7 +97,7 @@ public:
      * @param n: number of ints in the args
      * @param ...: the ints, handled by va_list etc.
      */
-    IntColumn(int n, ...) {
+    IntArray(int n, ...) {
         set_type_('I');
 
         // each int* in arr_ will be of size 10
@@ -105,15 +110,14 @@ public:
         // initialize arr_ and n
         arr_ = new int*[num_arr_];
         //arr_[0] = ints;
-        size_t sn = n;
-        size_ = sn;
+        size_ = n;
 
         size_t curr_arr = 0;    // the current int* we are at in arr_
         va_list args;           // args given
         va_start(args, n);
 
         // for loop to fill arr_
-        for (size_t i = 0; i < sn; ++i) {
+        for (size_t i = 0; i < n; ++i) {
             // our array of size 10 is filled - add to arr_
             if (i % 10 == 0 && i != 0) {
                 arr_[curr_arr] = ints;
@@ -129,7 +133,7 @@ public:
     }
 
     // destructor - delete arr_ and its sub-arrays
-    ~IntColumn() {
+    ~IntArray() {
         for (size_t i = 0; i < num_arr_; ++i) {
             delete[] arr_[i];
         }
@@ -137,7 +141,7 @@ public:
     }
 
     /**
-     * gets the int at the given position in the column
+     * gets the int at the given position in the Array
      * @param idx: index of int to get
      * @returns the int at that index
      */
@@ -147,15 +151,15 @@ public:
     }
 
     /**
-     * turns this Column* into an IntColumn* (assuming it is one)
-     * @returns this column as an IntColumn*
+     * turns this Array* into an IntArray* (assuming it is one)
+     * @returns this Array as an IntArray*
      */
-    IntColumn* as_int() {
+    IntArray* as_int() {
         return this;
     }
 
     /**
-     * push the given val to the end of the column
+     * push the given val to the end of the Array
      * @param val: int to push back
      */
     virtual void push_back(int val) {
@@ -199,31 +203,45 @@ public:
         arr_[idx / 10][idx % 10] = val;
     }
 
+    /** remove int at given idx */
+    void remove(size_t idx) {
+        assert(idx < size_);
+        if (idx == size_ - 1) {
+            arr_[idx / 10][idx % 10] = 0;
+        } else {
+            for (size_t i = idx; i < size_; ++i) {
+                set(i, arr_[(i + 1) / 10][(i + 1) % 10]);
+            }
+        }
+        --size_;
+        if (size_ % 10 == 0) --num_arr_;
+    }
+
     /**
-     * get the amount of ints in the column
-     * @returns the amount of ints in the column
+     * get the amount of ints in the Array
+     * @returns the amount of ints in the Array
      */
     size_t size() {
         return size_;
     }
 };
 
-// Other primitive column classes similar...
+// Other primitive Array classes similar...
 
 /*************************************************************************
- * BoolColumn::
+ * BoolArray::
  * Holds primitive bool values, unwrapped.
  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
  */
-class BoolColumn : public Column {
+class BoolArray : public Array {
 public:
 
     bool** arr_;        // internal array of bool arrays
     size_t num_arr_;    // number of bool arrays in arr_
     size_t size_;       // number of bools total in arr_
 
-    // default constructor - initialize as an empty BoolColumn
-    BoolColumn() {
+    // default constructor - initialize as an empty BoolArray
+    BoolArray() {
         set_type_('B');
         size_ = 0;
         num_arr_ = 0;
@@ -235,7 +253,7 @@ public:
      * @param n: number of bools in the args
      * @param ...: the bools, handled by va_list etc.
      */
-    BoolColumn(int n, ...) {
+    BoolArray(int n, ...) {
         set_type_('B');
 
         // each bool* in arr_ will be of size 10
@@ -248,15 +266,14 @@ public:
         // initialize arr_ and n
         arr_ = new bool*[num_arr_];
         //arr_[0] = bools;
-        size_t sn = n;
-        size_ = sn;
+        size_ = n;
 
         size_t curr_arr_ = 0;   // the current bool* we are at in arr)
         va_list args;           // args given
         va_start(args, n);
 
         // for loop to fill arr_
-        for (size_t i = 0; i < sn; ++i) {
+        for (size_t i = 0; i < n; ++i) {
             // our array of size 10 is filled - add to arr_
             if (i % 10 == 0 && i != 0) {
                 arr_[curr_arr_] = bools;
@@ -272,7 +289,7 @@ public:
     }
 
     // destructor - delete arr_ and its sub-arrays
-    ~BoolColumn() {
+    ~BoolArray() {
         for (size_t i = 0; i < num_arr_; ++i) {
             delete[] arr_[i];
         }
@@ -280,7 +297,7 @@ public:
     }
 
     /**
-     * gets the bool at the given position in the column
+     * gets the bool at the given position in the Array
      * @param idx: index of bool to get
      * @returns the bool at that index
      */
@@ -290,15 +307,15 @@ public:
     }
 
     /**
-     * turns this Column* into an BoolColumn* (assuming it is one)
-     * @returns this column as an BoolColumn*
+     * turns this Array* into an BoolArray* (assuming it is one)
+     * @returns this Array as an BoolArray*
      */
-    BoolColumn* as_bool() {
+    BoolArray* as_bool() {
         return this;
     }
 
     /**
-     * push the given val to the end of the column
+     * push the given val to the end of the Array
      * @param val: bool to push back
      */
     virtual void push_back(bool val) {
@@ -343,8 +360,8 @@ public:
     }
 
     /**
-     * get the amount of ints in the column
-     * @returns the amount of ints in the column
+     * get the amount of ints in the Array
+     * @returns the amount of ints in the Array
      */
     size_t size() {
         return size_;
@@ -352,19 +369,19 @@ public:
 };
 
 /*************************************************************************
- * FloatColumn::
+ * FloatArray::
  * Holds primitive float values, unwrapped.
  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
  */
-class FloatColumn : public Column {
+class FloatArray : public Array {
 public:
 
     float** arr_;       // internal array of float arrays
     size_t num_arr_;    // number of float arrays in arr_
     size_t size_;       // number of floats total in arr_
 
-    // default constructor - initialize as empty FloatColumn
-    FloatColumn() {
+    // default constructor - initialize as empty FloatArray
+    FloatArray() {
         set_type_('F');
         size_ = 0;
         num_arr_ = 0;
@@ -376,7 +393,7 @@ public:
      * @param n: number of floats in the args
      * @param ...: the floats, handled by va_list etc.
      */
-    FloatColumn(int n, ...) {
+    FloatArray(int n, ...) {
         set_type_('F');
 
         // each bool* in arr_ will be of size 10
@@ -389,15 +406,14 @@ public:
         // initialize arr_ and n
         arr_ = new float*[num_arr_];
         //arr_[0] = floats;
-        size_t sn = n;
-        size_ = sn;
+        size_ = n;
 
         size_t curr_arr_ = 0;   // the current float* we are at in arr_
         va_list args;           // args given
         va_start(args, n);
 
         // for loop to fill arr_
-        for (size_t i = 0; i < sn; ++i) {
+        for (size_t i = 0; i < n; ++i) {
             // our array of size 10 is filled - add to arr_
             if (i % 10 == 0 && i != 0) {
                 arr_[curr_arr_] = floats;
@@ -413,15 +429,36 @@ public:
     }
 
     // destructor - delete arr_ and its sub-arrays
-    ~FloatColumn() {
+    ~FloatArray() {
         for (size_t i = 0; i < num_arr_; ++i) {
             delete[] arr_[i];
         }
         delete[] arr_;
     }
 
+    /** returns true if this is equal to that */
+    bool equals(Object* that) {
+        if (that == this) return true;
+        FloatArray* x = dynamic_cast<FloatArray*>(that);
+        if (x == nullptr) return false;
+        if (size_ != x->size_) return false;
+        for (size_t i = 0; i < size_; ++i) {
+            if (get(i) != x->get(i)) return false;
+        }
+        return true;
+    }
+
+    /** gets the hash code value */
+    size_t hash() {
+        size_t hash = 0;
+        for (size_t i = 0; i < size_; ++i) {
+            hash += get(i);
+        }
+        return hash;
+    }
+
     /**
-     * gets the float at the given position in the column
+     * gets the float at the given position in the Array
      * @param idx: index of float to get
      * @returns the float at that index
      */
@@ -431,15 +468,15 @@ public:
     }
 
     /**
-     * turns this Column* into an FloatColumn* (assuming it is one)
-     * @returns this column as an FloatColumn*
+     * turns this Array* into an FloatArray* (assuming it is one)
+     * @returns this Array as an FloatArray*
      */
-    FloatColumn* as_float() {
+    FloatArray* as_float() {
         return this;
     }
 
     /**
-     * push the given val to the end of the column
+     * push the given val to the end of the Array
      * @param val: float to push back
      */
     virtual void push_back(float val) {
@@ -484,8 +521,8 @@ public:
     }
 
     /**
-     * get the amount of floats in the column
-     * @returns the amount of floats in the column
+     * get the amount of floats in the Array
+     * @returns the amount of floats in the Array
      */
     size_t size() {
         return size_;
@@ -493,20 +530,20 @@ public:
 };
 
 /*************************************************************************
- * StringColumn::
+ * StringArray::
  * Holds string pointers. The strings are external.  Nullptr is a valid
  * value.
  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
  */
-class StringColumn : public Column {
+class StringArray : public Array {
 public:
 
     String*** arr_;     // internal array of String* arrays
     size_t num_arr_;    // number of String* arrays there are in arr_
     size_t size_;       // number of String*s total there are in arr_
 
-    // default construtor - initialize as an empty StringColumn
-    StringColumn() {
+    // default construtor - initialize as an empty StringArray
+    StringArray() {
         set_type_('S');
         size_ = 0;
         num_arr_ = 0;
@@ -518,7 +555,7 @@ public:
      * @param n: number of String* in the args
      * @param ...: the Strings, handled by va_list etc.
      */
-    StringColumn(int n, ...) {
+    StringArray(int n, ...) {
         set_type_('S');
 
         // each String** in arr_ will be of size 10
@@ -531,15 +568,14 @@ public:
         // initialize arr_ and n
         arr_ = new String**[num_arr_];
         //arr_[0] = strings;
-        size_t sn = n;
-        size_ = sn;
+        size_ = n;
 
         size_t curr_arr_ = 0;   // the current String** we are at in arr_
         va_list args;           // args given
         va_start(args, n);
 
         // for loop to fill arr_
-        for (size_t i = 0; i < sn; ++i) {
+        for (size_t i = 0; i < n; ++i) {
             // our array of size 10 is filled - add to arr_
             if (i % 10 == 0 && i != 0) {
                 arr_[curr_arr_] = strings;
@@ -556,7 +592,7 @@ public:
     }
 
     // destructor - delete arr_, its sub-arrays, and their strings
-    ~StringColumn() {
+    ~StringArray() {
         for (size_t i = 0; i < num_arr_; ++i) {
             for (size_t j = 0; j < 10 && (i * 10) + j < size_; ++j) {
                 delete arr_[i][j];
@@ -566,11 +602,32 @@ public:
         delete[] arr_;
     }
 
+    /** returns true if this is equal to that */
+    bool equals(Object* that) {
+        if (that == this) return true;
+        StringArray* x = dynamic_cast<StringArray*>(that);
+        if (x == nullptr) return false;
+        if (size_ != x->size_) return false;
+        for (size_t i = 0; i < size_; ++i) {
+            if (!get(i)->equals(x->get(i))) return false;
+        }
+        return true;
+    }
+
+    /** gets the hash code value */
+    size_t hash() {
+        size_t hash = 0;
+        for (size_t i = 0; i < size_; ++i) {
+            hash += get(i)->hash();
+        }
+        return hash;
+    }
+
     /**
-     * turns this Column* into an StringColumn* (assuming it is one)
-     * @returns this column as an StringColumn*
+     * turns this Array* into an StringArray* (assuming it is one)
+     * @returns this Array as an StringArray*
      */
-    StringColumn* as_string() {
+    StringArray* as_string() {
         return this;
     }
 
@@ -597,7 +654,7 @@ public:
     }
 
     /**
-     * push the given val to the end of the column
+     * push the given val to the end of the Array
      * @param val: String* to push back
      */
     void push_back(String* val) {
@@ -605,7 +662,6 @@ public:
         // copy String**s into a new String*** - copies pointers but not payload
         if (size_ % 10 == 0) {
             // increment size values
-            //std::cout << size_ << std::endl;
             ++size_;
             ++num_arr_;
 
@@ -634,11 +690,218 @@ public:
         }
     }
 
+    /** remove String at given idx */
+    void remove(size_t idx) {
+        assert(idx < size_);
+        if (idx == size_ - 1) {
+            arr_[idx / 10][idx % 10] = NULL;
+        } else {
+            for (size_t i = idx; i < size_; ++i) {
+                set(i, arr_[(i + 1) / 10][(i + 1) % 10]);
+            }
+        }
+        --size_;
+        if (size_ % 10 == 0) --num_arr_;
+    }
+
     /**
-     * get the amount of Strings in the column
-     * @returns the amount of Strings in the column
+     * get the amount of Strings in the Array
+     * @returns the amount of Strings in the Array
      */
     size_t size() {
         return size_;
+    }
+};
+
+/*************************************************************************
+ * ByteArray::
+ * Holds primitive char values, unwrapped.
+ * @authors: horn.s@husky.neu.edu, armani.a@husky.neu.edu
+ */
+class ByteArray : public Array {
+public:
+
+    char** arr_;         // internal array of char arrays
+    size_t num_arr_;    // number of char arrays in arr_
+    size_t size_;       // number of chars total in arr_
+
+
+    // default constructor - initialize as an empty ByteArray
+    ByteArray() {
+        set_type_('C');
+        size_ = 0;
+        num_arr_ = 0;
+        arr_ = new char*[0];
+    }
+
+    /** NOT USED
+     * constructor with values given - initialize all values into arr_
+     * @param n: number of chars in the args
+     * @param ...: the chars, handled by va_list etc.
+     *
+    ByteArray(int n, ...) {
+        set_type_('C');
+
+        // each char* in arr_ will be of size 10
+        char* chars = new char[10];
+
+        // set the number of num_arr_ we will have based on n
+        if (n % 10 == 0) num_arr_ = n / 10;
+        else num_arr_ = (n / 10) + 1;
+
+        // initialize arr_ and n
+        arr_ = new char*[num_arr_];
+        //arr_[0] = chars;
+        size_ = n;
+
+        size_t curr_arr = 0;    // the current char* we are at in arr_
+        va_list args;           // args given
+        va_start(args, n);
+
+        // for loop to fill arr_
+        for (size_t i = 0; i < n; ++i) {
+            // our array of size 10 is filled - add to arr_
+            if (i % 10 == 0 && i != 0) {
+                arr_[curr_arr] = chars;
+                ++curr_arr;
+                chars = new char[10];
+            }
+            // add the current char to chars
+            chars[i % 10] = va_arg(args, char);
+        }
+        // add the last array into arr_
+        arr_[curr_arr] = chars;
+        va_end(args);
+    }*/
+
+    // constructor turning a string into a ByteArray
+    ByteArray(const char* str) {
+      set_type_('C');
+
+      size_t sz = strlen(str);
+
+      // each char* in arr_ will be of size 10
+      char* chars = new char[10];
+
+      // set the number of num_arr_ we will have based on n
+      if (sz % 10 == 0) num_arr_ = sz / 10;
+      else num_arr_ = (sz / 10) + 1;
+
+      // initialize arr_ and n
+      arr_ = new char*[num_arr_];
+      //arr_[0] = chars;
+      size_ = sz;
+
+      size_t curr_arr = 0;    // the current char* we are at in arr_
+
+      // for loop to fill arr_
+      for (size_t i = 0; i < sz; ++i) {
+          // our array of size 10 is filled - add to arr_
+          if (i % 10 == 0 && i != 0) {
+              arr_[curr_arr] = chars;
+              ++curr_arr;
+              chars = new char[10];
+          }
+          // add the current char to chars
+          chars[i % 10] = str[i];
+      }
+      // add the last array into arr_
+      arr_[curr_arr] = chars;
+    }
+
+    // destructor - delete arr_ and its sub-arrays
+    ~ByteArray() {
+        for (size_t i = 0; i < num_arr_; ++i) {
+            delete[] arr_[i];
+        }
+        delete[] arr_;
+    }
+
+    /**
+     * gets the char at the given position in the Array
+     * @param idx: index of char to get
+     * @returns the char at that index
+     */
+    char get(size_t idx) {
+        assert(idx < size_);
+        return arr_[idx / 10][idx % 10];
+    }
+
+    /**
+     * turns this Array* into an ByteArray* (assuming it is one)
+     * @returns this Array as an ByteArray*
+     */
+    ByteArray* as_char() {
+        return this;
+    }
+
+    /**
+     * push the given val to the end of the Array
+     * @param val: char to push back
+     */
+    virtual void push_back(char val) {
+        // the last char* in arr_ is full
+        // copy char*s into a new char** - copies pointers but not payload
+        if (size_ % 10 == 0) {
+            // increment size values
+            ++size_;
+            ++num_arr_;
+
+            // create new char* and initialize with val at first idx
+            char* chars = new char[10];
+            chars[0] = val;
+
+            // set up a temp char**, overwrite arr_ with new char**
+            char** tmp = arr_;
+            arr_ = new char*[num_arr_];
+
+            // for loop copy values from temp into arr_
+            for (size_t i = 0; i < num_arr_ - 1; ++i) {
+                arr_[i] = tmp[i];
+            }
+
+            // add new char* into arr_ and delete the temp
+            arr_[num_arr_ - 1] = chars;
+            delete[] tmp;
+        // we have room in the last char* of arr_ - add the val
+        } else {
+            arr_[size_ / 10][size_ % 10] = val;
+            ++size_;
+        }
+    }
+
+    /** adds the given string to the back of the array */
+    void push_string(const char* str) {
+      for (size_t i = 0; str[i] != 0; ++i) {
+        push_back((char)str[i]);
+      }
+    }
+
+    /**
+     * replaces the char at given index with given char
+     * @param idx: the index at which to place this value
+     * @param val: val to put at the index
+     */
+    void set(size_t idx, char val) {
+        assert(idx < size_);
+        arr_[idx / 10][idx % 10] = val;
+    }
+
+    /**
+     * get the amount of chars in the Array
+     * @returns the amount of chars in the Array
+     */
+    size_t size() {
+        return size_;
+    }
+
+    /** returns this byte array as a string of bytes*/
+    const char* as_bytes() {
+      char* str = new char[size_ + 1];
+      for (size_t i = 0; i < size_; ++i) {
+        str[i] = get(i);
+      }
+      str[size_] = 0;
+      return str;
     }
 };
