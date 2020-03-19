@@ -165,7 +165,7 @@ public:
     if (c->size() == 0) {
       c->push_back(val);
     } else {
-      c->set(0, val);
+      c->set(0, val, 0);
     }
   }
 
@@ -284,7 +284,7 @@ public:
     f.start(0);
     r.visit(0, f);
     f.done();
-    return 1;
+    return false;
   }
 
   /**
@@ -388,7 +388,7 @@ public:
         sum_ += r.get_int(i);
       }
     }
-    return true;
+    return false;
   }
 
   /** Adds the sum of the other rower to this sum and deletes it. */
@@ -421,7 +421,7 @@ public:
         String* old = r.get_string(i);
         String* newString = old->reverse();
         r.set(i, newString);
-        delete newString;
+        //delete old;
       }
     }
     return true;

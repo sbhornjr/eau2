@@ -4,7 +4,7 @@
 #include "column.h"
 #include "row.h"
 #include "schema.h"
-#include "../helper.h"
+#include "helper.h"
 
 #include <cstdlib>
 #include <thread>
@@ -12,8 +12,8 @@
 #include <condition_variable>
 #include <sstream>
 #include <atomic>
-#include "../object.h"
-#include "../string.h"
+#include "object.h"
+#include "string.h"
 
 /** A Thread wraps the thread operations in the standard library.
  *  author: vitekj@me.com */
@@ -126,6 +126,7 @@ class DataFrame : public Object {
   // destructor - delete schema, cols_, and its cols
   ~DataFrame() {
     for (size_t i = 0; i < schema_->width(); ++i) {
+      cols_[i]->delete_all();
       delete cols_[i];
     }
     delete[] cols_;

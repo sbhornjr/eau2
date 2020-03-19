@@ -1,7 +1,7 @@
-#include "dataframe/dataframe.h"
-#include "dataframe/row.h"
+#include "dataframe.h"
+#include "row.h"
 #include "helper.h"
-#include "sorer/sorer.h"
+#include "sorer.h"
 
 #include <string>
 #include <iostream>

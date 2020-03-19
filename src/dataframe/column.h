@@ -1,9 +1,11 @@
 // lang::CwC
 
 #pragma once
-#include "../string.h"
+#include "string.h"
 #include <math.h>
 #include <stdarg.h>
+
+using namespace std;
 
 /** @designers: vitekj@me.com, course staff */
 
@@ -12,6 +14,10 @@ class IntColumn;
 class BoolColumn;
 class FloatColumn;
 class StringColumn;
+
+size_t ARR_SIZE = 256;
+size_t STRING_ARR_SIZE = 128;
+size_t BOOL_ARR_SIZE = 1024;
 
 /**************************************************************************
  * Column ::
@@ -49,6 +55,8 @@ public:
     virtual void push_back(bool val) { assert(false); }
     virtual void push_back(float val) { assert(false); }
     virtual void push_back(String* val) { assert(false); }
+
+    virtual void delete_all() {}
 
     /** Returns the number of elements in the column. Pure virtual. */
     virtual size_t size() = 0;
@@ -95,16 +103,15 @@ public:
     IntColumn(int n, ...) {
         set_type_('I');
 
-        // each int* in arr_ will be of size 10
-        int* ints = new int[10];
+        // each int* in arr_ will be of size 100
+        int* ints = new int[ARR_SIZE];
 
         // set the number of num_arr_ we will have based on n
-        if (n % 10 == 0) num_arr_ = n / 10;
-        else num_arr_ = (n / 10) + 1;
+        if (n % ARR_SIZE == 0) num_arr_ = n / ARR_SIZE;
+        else num_arr_ = (n / ARR_SIZE) + 1;
 
         // initialize arr_ and n
         arr_ = new int*[num_arr_];
-        //arr_[0] = ints;
         size_t sn = n;
         size_ = sn;
 
@@ -114,14 +121,14 @@ public:
 
         // for loop to fill arr_
         for (size_t i = 0; i < sn; ++i) {
-            // our array of size 10 is filled - add to arr_
-            if (i % 10 == 0 && i != 0) {
+            // our array of size is filled - add to arr_
+            if (i % ARR_SIZE == 0 && i != 0) {
                 arr_[curr_arr] = ints;
                 ++curr_arr;
-                ints = new int[10];
+                ints = new int[ARR_SIZE];
             }
             // add the current int to ints
-            ints[i % 10] = va_arg(args, int);
+            ints[i % ARR_SIZE] = va_arg(args, int);
         }
         // add the last array into arr_
         arr_[curr_arr] = ints;
@@ -143,7 +150,7 @@ public:
      */
     int get(size_t idx) {
         assert(idx < size_);
-        return arr_[idx / 10][idx % 10];
+        return arr_[idx / ARR_SIZE][idx % ARR_SIZE];
     }
 
     /**
@@ -161,13 +168,13 @@ public:
     virtual void push_back(int val) {
         // the last int* in arr_ is full
         // copy int*s into a new int** - copies pointers but not payload
-        if (size_ % 10 == 0) {
+        if (size_ % ARR_SIZE == 0) {
             // increment size values
             ++size_;
             ++num_arr_;
 
             // create new int* and initialize with val at first idx
-            int* ints = new int[10];
+            int* ints = new int[ARR_SIZE];
             ints[0] = val;
 
             // set up a temp int**, overwrite arr_ with new int**
@@ -184,7 +191,7 @@ public:
             delete[] tmp;
         // we have room in the last int* of arr_ - add the val
         } else {
-            arr_[size_ / 10][size_ % 10] = val;
+            arr_[size_ / ARR_SIZE][size_ % ARR_SIZE] = val;
             ++size_;
         }
     }
@@ -196,7 +203,7 @@ public:
      */
     void set(size_t idx, int val) {
         assert(idx < size_);
-        arr_[idx / 10][idx % 10] = val;
+        arr_[idx / ARR_SIZE][idx % ARR_SIZE] = val;
     }
 
     /**
@@ -239,15 +246,14 @@ public:
         set_type_('B');
 
         // each bool* in arr_ will be of size 10
-        bool* bools = new bool[10];
+        bool* bools = new bool[BOOL_ARR_SIZE];
 
         // set the number of num_arr_ we will have based on n
-        if (n % 10 == 0) num_arr_ = n / 10;
-        else num_arr_ = (n / 10) + 1;
+        if (n % BOOL_ARR_SIZE == 0) num_arr_ = n / BOOL_ARR_SIZE;
+        else num_arr_ = (n / BOOL_ARR_SIZE) + 1;
 
         // initialize arr_ and n
         arr_ = new bool*[num_arr_];
-        //arr_[0] = bools;
         size_t sn = n;
         size_ = sn;
 
@@ -257,14 +263,14 @@ public:
 
         // for loop to fill arr_
         for (size_t i = 0; i < sn; ++i) {
-            // our array of size 10 is filled - add to arr_
-            if (i % 10 == 0 && i != 0) {
+            // our array of size is filled - add to arr_
+            if (i % BOOL_ARR_SIZE == 0 && i != 0) {
                 arr_[curr_arr_] = bools;
                 ++curr_arr_;
-                bools = new bool[10];
+                bools = new bool[BOOL_ARR_SIZE];
             }
             // add the current bool to bools
-            bools[i % 10] = va_arg(args, int);
+            bools[i % BOOL_ARR_SIZE] = va_arg(args, int);
         }
         // add the last array into arr_
         arr_[curr_arr_] = bools;
@@ -286,7 +292,7 @@ public:
      */
     bool get(size_t idx) {
         assert(idx < size_);
-        return arr_[idx / 10][idx % 10];
+        return arr_[idx / BOOL_ARR_SIZE][idx % BOOL_ARR_SIZE];
     }
 
     /**
@@ -304,13 +310,13 @@ public:
     virtual void push_back(bool val) {
         // the last bool* in arr_ is full
         // copy bool*s into a new bool** - copies pointers but not payload
-        if (size_ % 10 == 0) {
+        if (size_ % BOOL_ARR_SIZE == 0) {
             // increment size values
             ++size_;
             ++num_arr_;
 
             // create new bool* and initialize with val at first idx
-            bool* bools = new bool[10];
+            bool* bools = new bool[BOOL_ARR_SIZE];
             bools[0] = val;
 
             // set up a temp bool**, overwrite arr_ with new bool**
@@ -327,7 +333,7 @@ public:
             delete[] tmp;
         // we have room in the last bool* of arr_ - add the val
         } else {
-            arr_[size_ / 10][size_ % 10] = val;
+            arr_[size_ / BOOL_ARR_SIZE][size_ % BOOL_ARR_SIZE] = val;
             ++size_;
         }
     }
@@ -339,7 +345,7 @@ public:
      */
     void set(size_t idx, bool val) {
         assert(idx < size_);
-        arr_[idx / 10][idx % 10] = val;
+        arr_[idx / BOOL_ARR_SIZE][idx % BOOL_ARR_SIZE] = val;
     }
 
     /**
@@ -380,15 +386,14 @@ public:
         set_type_('F');
 
         // each bool* in arr_ will be of size 10
-        float* floats = new float[10];
+        float* floats = new float[ARR_SIZE];
 
         // set the number of num_arr_ we will have based on n
-        if (n % 10 == 0) num_arr_ = n / 10;
-        else num_arr_ = (n / 10) + 1;
+        if (n % ARR_SIZE == 0) num_arr_ = n / ARR_SIZE;
+        else num_arr_ = (n / ARR_SIZE) + 1;
 
         // initialize arr_ and n
         arr_ = new float*[num_arr_];
-        //arr_[0] = floats;
         size_t sn = n;
         size_ = sn;
 
@@ -398,14 +403,14 @@ public:
 
         // for loop to fill arr_
         for (size_t i = 0; i < sn; ++i) {
-            // our array of size 10 is filled - add to arr_
-            if (i % 10 == 0 && i != 0) {
+            // our array of size is filled - add to arr_
+            if (i % ARR_SIZE == 0 && i != 0) {
                 arr_[curr_arr_] = floats;
                 ++curr_arr_;
-                floats = new float[10];
+                floats = new float[ARR_SIZE];
             }
             // add the current float into floats
-            floats[i % 10] = va_arg(args, double);
+            floats[i % ARR_SIZE] = va_arg(args, double);
         }
         // add the last array into arr_
         arr_[curr_arr_] = floats;
@@ -427,7 +432,7 @@ public:
      */
     float get(size_t idx) {
         assert(idx < size_);
-        return arr_[idx / 10][idx % 10];
+        return arr_[idx / ARR_SIZE][idx % ARR_SIZE];
     }
 
     /**
@@ -445,13 +450,13 @@ public:
     virtual void push_back(float val) {
         // the last float* in arr_ is full
         // copy float*s into a new float** - copies pointers but not payload
-        if (size_ % 10 == 0) {
+        if (size_ % ARR_SIZE == 0) {
             // increment size values
             ++size_;
             ++num_arr_;
 
             // create new float* and initialize val at first idx
-            float* floats = new float[10];
+            float* floats = new float[ARR_SIZE];
             floats[0] = val;
 
             // set up a temp float**, overwrite arr_ with new float**
@@ -468,7 +473,7 @@ public:
             delete[] tmp;
         // we have room in the last float* of arr_ - add the val
         } else {
-            arr_[size_ / 10][size_ % 10] = val;
+            arr_[size_ / ARR_SIZE][size_ % ARR_SIZE] = val;
             ++size_;
         }
     }
@@ -480,7 +485,7 @@ public:
      */
     void set(size_t idx, float val) {
         assert(idx < size_);
-        arr_[idx / 10][idx % 10] = val;
+        arr_[idx / ARR_SIZE][idx % ARR_SIZE] = val;
     }
 
     /**
@@ -522,15 +527,14 @@ public:
         set_type_('S');
 
         // each String** in arr_ will be of size 10
-        String** strings = new String*[10];
+        String** strings = new String*[STRING_ARR_SIZE];
 
         // set the number of num_arr_ we will have based on n
-        if (n % 10 == 0) num_arr_ = n / 10;
-        else num_arr_ = (n / 10) + 1;
+        if (n % STRING_ARR_SIZE == 0) num_arr_ = n / STRING_ARR_SIZE;
+        else num_arr_ = (n / STRING_ARR_SIZE) + 1;
 
         // initialize arr_ and n
         arr_ = new String**[num_arr_];
-        //arr_[0] = strings;
         size_t sn = n;
         size_ = sn;
 
@@ -540,15 +544,15 @@ public:
 
         // for loop to fill arr_
         for (size_t i = 0; i < sn; ++i) {
-            // our array of size 10 is filled - add to arr_
-            if (i % 10 == 0 && i != 0) {
+            // our array of size is filled - add to arr_
+            if (i % STRING_ARR_SIZE == 0 && i != 0) {
                 arr_[curr_arr_] = strings;
                 ++curr_arr_;
-                strings = new String*[10];
+                strings = new String*[STRING_ARR_SIZE];
             }
             // add the current String* to strings - copy value
-            String* s = new String(*va_arg(args, String*));
-            strings[i % 10] = s;
+            String* s = va_arg(args, String*);
+            strings[i % STRING_ARR_SIZE] = s;
         }
         // add the last array into arr_
         arr_[curr_arr_] = strings;
@@ -558,12 +562,23 @@ public:
     // destructor - delete arr_, its sub-arrays, and their strings
     ~StringColumn() {
         for (size_t i = 0; i < num_arr_; ++i) {
-            for (size_t j = 0; j < 10 && (i * 10) + j < size_; ++j) {
+            delete[] arr_[i];
+        }
+        delete[] arr_;
+    }
+
+    /** delete all strings */
+    void delete_all() {
+        for (size_t i = 0; i < num_arr_; ++i) {
+            for (size_t j = 0; j < STRING_ARR_SIZE && (i * STRING_ARR_SIZE) + j < size_; ++j) {
                 delete arr_[i][j];
             }
             delete[] arr_[i];
         }
+        size_ = 0;
+        num_arr_ = 0;
         delete[] arr_;
+        arr_ = new String**[num_arr_];
     }
 
     /**
@@ -580,7 +595,7 @@ public:
      */
     String* get(size_t idx) {
         assert(idx < size_);
-        return arr_[idx / 10][idx % 10];
+        return arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
     }
 
     /**
@@ -591,9 +606,23 @@ public:
      */
     void set(size_t idx, String* val) {
         assert(idx < size_);
-        String* s = new String(*val);
-        delete arr_[idx / 10][idx % 10];
-        arr_[idx / 10][idx % 10] = s;
+        String* s = val;
+        delete arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
+        arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = s;
+    }
+
+    /**
+     * Acquire ownership fo the string.
+     * replaces the int at given index with given String*
+     * @param idx: the index at which to place this value
+     * @param val: val to put at the index
+     * @param del: indicates whether this string should be deleted
+     */
+    void set(size_t idx, String* val, bool del) {
+        assert(idx < size_);
+        String* s = val;
+        if (del) delete arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
+        arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = s;
     }
 
     /**
@@ -603,15 +632,15 @@ public:
     void push_back(String* val) {
         // the last String** in arr_ is full
         // copy String**s into a new String*** - copies pointers but not payload
-        if (size_ % 10 == 0) {
+        if (size_ % STRING_ARR_SIZE == 0) {
             // increment size values
             //std::cout << size_ << std::endl;
             ++size_;
             ++num_arr_;
 
             // create new String** and initialize with val at first idx
-            String** strings = new String*[10];
-            String* s = new String(*val);
+            String** strings = new String*[STRING_ARR_SIZE];
+            String* s = val;
             strings[0] = s;
 
             // set up a temp String***, overwrite arr_ with new String***
@@ -628,8 +657,8 @@ public:
             delete[] tmp;
         // we have room in the last String** of arr_ - add the val
         } else {
-            String* s = new String(*val);
-            arr_[size_ / 10][size_ % 10] = s;
+            String* s = val;
+            arr_[size_ / STRING_ARR_SIZE][size_ % STRING_ARR_SIZE] = s;
             ++size_;
         }
     }

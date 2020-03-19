@@ -6,8 +6,10 @@
 #include <stdexcept>
 #include <vector>
 #include <fstream>
-#include "../object.h"
-#include "../dataframe/dataframe.h"
+#include <chrono>
+#include <thread>
+#include "object.h"
+#include "dataframe.h"
 
 using namespace std;
 
@@ -77,6 +79,8 @@ public:
        if(goodrows.size() > 1) {
          srand (time(NULL));
          int rand1 = rand() % (goodrows.size() + 1);
+         this_thread::sleep_for(chrono::milliseconds(10));
+         srand(time(NULL));
          int rand2 = rand() % (goodrows.size() + 1);
          if (rand1 == rand2) {
            rand1 = rand() % (goodrows.size() + 1);
@@ -289,7 +293,6 @@ public:
         if (file.is_open()) {
             // loop through lines of the file
             while (getline(file, line)) {
-                cout << line << endl;
                 // skip rows if not starting at 0 (or not at from yet)
                 if (!started) {
                     // count the bytes in the line
@@ -392,7 +395,7 @@ public:
                     if(schema->col_type(i) == 'S') {
                         String* str = new String(tmp[i].c_str());
                         validated.set(i, str);
-                        delete str;
+                        //delete str;
                     }
                     // Case: Float, push back if one of <FLOAT> <INT> <BOOL>
                     else if(schema->col_type(i) == 'F') {
@@ -442,13 +445,20 @@ public:
 
                     // Case: Bool, push back if one of <BOOL>
                     else if (schema->col_type(i) == 'B') {
-                        if (tmp[i][0] == '1') validated.set(i, true);
-                        else if (tmp[i][0] == '0') validated.set(i, false);
+                        if (strcmp(tmp[i].c_str(), "1") == 0) validated.set(i, true);
+                        else if (strcmp(tmp[i].c_str(), "0") == 0) validated.set(i, false);
                         else isValidated = false;
                     }
                 } // End creation of validated row
                 if (isValidated) {
                     df->add_row(validated);
+                } else {
+                    for (size_t i = 0; i < validated.width(); ++i) {
+                        if (validated.col_type(i) == 'S') {
+                            StringColumn* sc = validated.columns_[i]->as_string();
+                            if (sc->size() >= 1) delete sc->get(0);
+                        }
+                    }
                 }
             }
         } else {

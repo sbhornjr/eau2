@@ -5,4 +5,4 @@ test:
 	./p1 data.sor
 
 valgr:
-	valgrind --leak-check=full ./p1 data.sor
+	valgrind --leak-check=full --show-leak-kinds=all ./p1 data.sor
