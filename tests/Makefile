@@ -2,7 +2,7 @@ build:
 	g++ -g -Wall -std=c++11 -pthread main.cpp -o p1
 
 test:
-	./p1 data.sor
+	./p1
 
 valgr:
-	valgrind --leak-check=full --show-leak-kinds=all ./p1 data.sor
+	valgrind --leak-check=full --show-leak-kinds=all ./p1

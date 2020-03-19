@@ -14,6 +14,8 @@
 #include <atomic>
 #include "object.h"
 #include "string.h"
+#include "array.h"
+#include "map.h"
 
 /** A Thread wraps the thread operations in the standard library.
  *  author: vitekj@me.com */
@@ -131,6 +133,57 @@ class DataFrame : public Object {
     }
     delete[] cols_;
     delete schema_;
+  }
+
+  /** 
+   *  create and return a df of 1 col with the values in from of size sz,
+   *  and make it the value of the given key in the kvstore */
+  DataFrame* from_array(String* key, SDFMap* kv, size_t sz, Array* from) {
+    Schema scm("");
+    DataFrame* df = new DataFrame(scm);
+    Column* c = get_new_col_(from->get_type());
+    if (from->as_int() != nullptr) {
+      IntArray* ia = from->as_int();
+      IntColumn* ic = c->as_int();
+      for (size_t i = 0; i < sz; ++i) {
+        ic->push_back(ia->get(i));
+      }
+      df->schema_->add_column('I');
+    } else if (from->as_bool() != nullptr) {
+      BoolArray* ba = from->as_bool();
+      BoolColumn* bc = c->as_bool();
+      for (size_t i = 0; i < sz; ++i) {
+        bc->push_back(ba->get(i));
+      }
+      df->schema_->add_column('B');
+    } else if (from->as_float() != nullptr) {
+      FloatArray* fa = from->as_float();
+      FloatColumn* fc = c->as_float();
+      for (size_t i = 0; i < sz; ++i) {
+        fc->push_back(fa->get(i));
+      }
+      df->schema_->add_column('F');
+    } else if (from->as_string() != nullptr) {
+      StringArray* sa = from->as_string();
+      StringColumn* sc = c->as_string();
+      for (size_t i = 0; i < sz; ++i) {
+        sc->push_back(sa->get(i));
+      }
+      df->schema_->add_column('S');
+    } else {
+      printf("creating DF from array: unknown array type, not creating DF");
+      return nullptr;
+    }
+
+    df->schema_->numrows_ = sz;
+
+    Column** cols = new Column*[1];
+    cols[0] = c;
+    delete df->cols_;
+    df->cols_ = cols;
+    
+    kv->put(key, df);
+    return df;
   }
 
   /** Returns the dataframe's schema. Modifying the schema after a dataframe

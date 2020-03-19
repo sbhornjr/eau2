@@ -2,6 +2,7 @@
 
 #pragma once
 #include "string.h"
+#include "column.h"
 #include "dataframe.h"
 #include <math.h>
 #include <stdarg.h>
@@ -14,10 +15,8 @@ class BoolArray;
 class FloatArray;
 class StringArray;
 class ByteArray;
-
-size_t ARR_SIZE = 256;
-size_t STRING_ARR_SIZE = 128;
-size_t BOOL_ARR_SIZE = 1024;
+class DFArray;
+class DataFrame;
 
 /**************************************************************************
  * Array ::
@@ -48,6 +47,9 @@ public:
 
     // returns this Array as a ByteArray*, or nullptr if not a ByteArray*
     virtual ByteArray* as_char() {return nullptr;}
+
+    // returns this Array as a ByteArray*, or nullptr if not a ByteArray*
+    virtual DFArray* as_df() {return nullptr;}
 
     /** Type appropriate push_back methods. Calling the wrong method is
      * undefined behavior. **/
@@ -116,7 +118,7 @@ public:
 
         // initialize arr_ and n
         arr_ = new int*[num_arr_];
-        //arr_[0] = ints;
+        size_t sn = n;
         size_ = n;
 
         size_t curr_arr = 0;    // the current int* we are at in arr_
@@ -124,7 +126,7 @@ public:
         va_start(args, n);
 
         // for loop to fill arr_
-        for (size_t i = 0; i < n; ++i) {
+        for (size_t i = 0; i < sn; ++i) {
             // our array of size 10 is filled - add to arr_
             if (i % ARR_SIZE == 0 && i != 0) {
                 arr_[curr_arr] = ints;
@@ -272,7 +274,7 @@ public:
 
         // initialize arr_ and n
         arr_ = new bool*[num_arr_];
-        //arr_[0] = bools;
+        size_t sn = n;
         size_ = n;
 
         size_t curr_arr_ = 0;   // the current bool* we are at in arr)
@@ -280,7 +282,7 @@ public:
         va_start(args, n);
 
         // for loop to fill arr_
-        for (size_t i = 0; i < n; ++i) {
+        for (size_t i = 0; i < sn; ++i) {
             // our array of size is filled - add to arr_
             if (i % BOOL_ARR_SIZE == 0 && i != 0) {
                 arr_[curr_arr_] = bools;
@@ -412,7 +414,7 @@ public:
 
         // initialize arr_ and n
         arr_ = new float*[num_arr_];
-        //arr_[0] = floats;
+        size_t sn = n;
         size_ = n;
 
         size_t curr_arr_ = 0;   // the current float* we are at in arr_
@@ -420,7 +422,7 @@ public:
         va_start(args, n);
 
         // for loop to fill arr_
-        for (size_t i = 0; i < n; ++i) {
+        for (size_t i = 0; i < sn; ++i) {
             // our array of size is filled - add to arr_
             if (i % ARR_SIZE == 0 && i != 0) {
                 arr_[curr_arr_] = floats;
@@ -574,7 +576,7 @@ public:
 
         // initialize arr_ and n
         arr_ = new String**[num_arr_];
-        //arr_[0] = strings;
+        size_t sn = n;
         size_ = n;
 
         size_t curr_arr_ = 0;   // the current String** we are at in arr_
@@ -582,7 +584,7 @@ public:
         va_start(args, n);
 
         // for loop to fill arr_
-        for (size_t i = 0; i < n; ++i) {
+        for (size_t i = 0; i < sn; ++i) {
             // our array of size is filled - add to arr_
             if (i % STRING_ARR_SIZE == 0 && i != 0) {
                 arr_[curr_arr_] = strings;
@@ -953,20 +955,6 @@ public:
         delete[] arr_;
     }
 
-    /** delete all dfs */
-    void delete_all() {
-        for (size_t i = 0; i < num_arr_; ++i) {
-            for (size_t j = 0; j < STRING_ARR_SIZE && (i * STRING_ARR_SIZE) + j < size_; ++j) {
-                delete arr_[i][j];
-            }
-            delete[] arr_[i];
-        }
-        size_ = 0;
-        num_arr_ = 0;
-        delete[] arr_;
-        arr_ = new DataFrame**[num_arr_];
-    }
-
     /** returns true if this is equal to that */
     bool equals(Object* that) {
         if (that == this) return true;
@@ -974,7 +962,7 @@ public:
         if (x == nullptr) return false;
         if (size_ != x->size_) return false;
         for (size_t i = 0; i < size_; ++i) {
-            if (!get(i)->equals(x->get(i))) return false;
+            if (get(i) != x->get(i)) return false;
         }
         return true;
     }
@@ -983,7 +971,7 @@ public:
     size_t hash() {
         size_t hash = 0;
         for (size_t i = 0; i < size_; ++i) {
-            hash += get(i)->hash();
+            hash += 17;
         }
         return hash;
     }
@@ -1013,7 +1001,6 @@ public:
      */
     void set(size_t idx, DataFrame* val) {
         assert(idx < size_);
-        delete arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
         arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = val;
     }
 

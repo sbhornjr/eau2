@@ -1,9 +1,9 @@
-// A1: Part 2
 // lang: CwC
 #pragma once
 
 #include "object.h"
 #include "string.h"
+#include "dataframe.h"
 #include "array.h"
 #include <cstdio>
 
@@ -251,7 +251,6 @@ class SDFMap: public Map {
 		}
 
 		~SDFMap() {
-			values_->delete_all();
 			delete values_;
 		}
 
