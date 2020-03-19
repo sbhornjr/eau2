@@ -34,6 +34,8 @@ public:
 
     assert(sum == 0);
 
+    delete vals;
+    delete key;
     delete df; 
   }
 };

@@ -179,7 +179,7 @@ class DataFrame : public Object {
 
     Column** cols = new Column*[1];
     cols[0] = c;
-    delete df->cols_;
+    delete[] df->cols_;
     df->cols_ = cols;
     
     kv->put(key, df);
