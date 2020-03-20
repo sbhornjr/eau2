@@ -19,7 +19,7 @@ The third layer will be the customer facing layer. A data analyst can input a qu
 
 Note: Our implementation will be changing as the project develops. This is a basic outline of what we expect to have.
 
-The Sorer class will handle reading in data from a schema-on-read file and determining a DataFrame schema. Four types of data will be supported: booleans, integers, strings, and floats. Data will be read only once. Basic operations happening within Sorer would include determining the overall size of passed in data and splitting it up into smaller dataframes, retrieving a schema from data, and handling rows with missing values by discarding them.
+The Sorer class will handle reading in data from a schema-on-read file and determining a DataFrame schema. Four types of data will be supported: booleans, integers, strings, and doubles. Data will be read only once. Basic operations happening within Sorer would include determining the overall size of passed in data and splitting it up into smaller dataframes, retrieving a schema from data, and handling rows with missing values by discarding them.
 * DataFrame* generate_dataframe(Schema s)
 
 The DataFrame class will have a particular schema derived from the result of running Sorer on the data. Basic operations will include returning the schema, getting the number of rows and columns, adding rows and columns, getting and setting values, map to run through each row, filtering rows, and printing.
@@ -44,7 +44,7 @@ The application will consist of customer-facing code that allows users to enter 
 
 ### Use cases:
 
-We are not yet sure about what exact use-cases there will be for the final iteration of eau2, so we will instead show off use-cases of what we have now, which is basically reading from a file to create a dataframe.
+We are not yet sure about what exact use-cases there will be for the final iteration of eau2, so we will instead show off use-cases of what we have now, which is basically reading from a file to create a dataframe and mapping a key to a dataframe.
 
 Given a sor data file data.sor:
 
@@ -62,6 +62,23 @@ It is that simple; the Sorer object takes the data file and parses it to infer a
 
 `Sorer s(“data.sor”, 0, -1);	will read the entire file starting at byte 0 (same as Sorer s(“data.sor”))`
 
+In our second milestone, we have added the distributed key-value store.
+
+Given a key in the form of some string, we can retrieve, set, or remove a dataframe mapping:
+
+`DataFrame* df = kv.get(key);`
+
+`SDFMap* m = new SDFMAP();`
+
+`String* key1 = new String("FRAME1");`
+
+`m.put(key1, new DataFrame(new Schema("")));`
+
+`m.get(key1);`
+
+`m.getAndWait(key1); // blocking`
+
+`m.remove(key1); // removes mapping and frees DataFrame memory`
 
 ### Open questions:
 
@@ -69,7 +86,11 @@ _Customer Facing:_ How will the customer interface with the application and run 
 
 _Networking/Data Frame:_ How will we divide the data between nodes? How many nodes should we have? How should we implement updating values in a dataframe (version numbers)?
 
+_File Reading:_ How can we improve the performance of creating a dataframe from gigantic files? (Possible solution is to introduce threading)
+
 ### Status:
 
 [Week of March 9] Our project is currently in the planning and preparation stage. Technical debt from the individual components such as the networking layer, the dataframe, and the schema-on-read parser has been resolved. We are able to read from large files and store reasonably sized dataframes. Operations can be carried out on the dataframes such as summation and filtering. At the moment, the network layer is not connected to a distributed Key-Value store. We plan to connect all the individual parts together to form the three layer architecture in the coming week. After that, we will likely need to make performance improvements and do thorough load testing with multi-gigabyte data sets.
+
+[Week of March 16] Our project now has the Key-Value store with operations such as get, put, and wait_and_get, taking in a key and returning a dataframe. We have improved the performance of our system significantly, halving execution time. In order to arrive at this performance boost, we removed the need to copy strings in our columns and arrays. We have changed one of the datatypes - floats - to now be doubles. In getting the trivial example to work for numbers with decimals, we noticed that floats were too small and lost precision after a certain threshold. Thus, doubles allowed us to maintain precision. In changing the datatypes, we had to modify our implementation of schema, columns, serialization, and arrays. The trivial example works for integers as well. We discovered a memory management bug with valgrind where empty schemas (character arrays with a null terminator) were not being appended to correctly. This bug was fixed by splitting our add_column method in schema into two cases (empty schema/non-empty schema). 
 
