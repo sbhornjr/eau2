@@ -89,14 +89,23 @@ class Schema : public Object {
     assert(typ == 'I' || typ == 'B' || typ == 'D' || typ == 'S');
     ++numcols_;
 
-    // append the typ onto our types string
+    String* newtypes;
+    if (types_->size() == 0) {
+      // Empty schemas must be treated differently.
+      // Replace empty string rather than append to avoid memory issues.
+      char oneChar[1];
+      oneChar[0] = typ;
+      newtypes = new String(oneChar, 1);
+    } else {
+    // Append the typ onto our types string.
     size_t len = types_->size();
     char* types = types_->c_str();
     types[len++] = typ;
     types[len] = '\0';
-    String* newtypes = new String(types);
-    delete types_;
-    types_ = newtypes;
+    newtypes = new String(types);
+   }
+   delete types_;
+   types_ = newtypes;
   }
 
   /** Add a row */
