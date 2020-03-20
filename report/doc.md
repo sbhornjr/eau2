@@ -25,8 +25,8 @@ The Sorer class will handle reading in data from a schema-on-read file and deter
 The DataFrame class will have a particular schema derived from the result of running Sorer on the data. Basic operations will include returning the schema, getting the number of rows and columns, adding rows and columns, getting and setting values, map to run through each row, filtering rows, and printing.
 * size_t nrows(), size_t ncols()
 * void add_row(Row r), void add_column(Column* col)
-* int get_int(size_t col, size_t row), bool get_bool(...), float get_float(...), String* get_string(...)
-* void set(size_t col, size_t row, int val), set(..., bool val), set(..., float val), set(..., String* val)
+* int get_int(size_t col, size_t row), bool get_bool(...), double get_double(...), String* get_string(...)
+* void set(size_t col, size_t row, int val), set(..., bool val), set(..., double val), set(..., String* val)
 * void map(Rower r), DataFrame* filter(Rower r), void print()
 
 The network will consist of various client nodes that are able to register with a server node and then exchange messages with other clients directly. They will each store part of a distributed key-value store, so exchanging chunks of data will be necessary. Data frames and messages will be able to be serialized to allow for easy travel through sockets.
