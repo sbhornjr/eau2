@@ -34,10 +34,11 @@ The network will consist of various client nodes that are able to register with 
 * int kill_node(Socket s)
 * void shutdown()
 
-The Key-Value store will be a <String, DataFrame> mapping where keys can be any string value and values will be data frames or sections of data frames distributed among various nodes. The KV store will support put(k, v), which adds the mapping of <k, v>, or updates k’s value if it already exists; get(k), which gets the value corresponding to k if it exists; and getAndWait(k), which gets the value corresponding to k, and it k does not exist it will wait until it does (i.e. it is blocking).
+The Key-Value store will be a <String, DataFrame> mapping where keys can be any string value and values will be data frames or sections of data frames distributed among various nodes. The KV store will support put(k, v), which adds the mapping of <k, v>, or updates k’s value if it already exists; get(k), which gets the value corresponding to k if it exists; and getAndWait(k), which gets the value corresponding to k, and if k does not exist, it will wait until it does (i.e. it is blocking). Additionally, we support the removal of mappings with the remove(k) method.
 * void put(String* key, DataFrame* value)
 * DataFrame* get(String* key)
 * DataFrame* getAndWait(String* key)
+* DataFrame* remove(String* key)
 
 The application will consist of customer-facing code that allows users to enter queries. The results of queries will be output to the user’s console (or whatever front-end they are accessing the eau2 application from). 
 * <return type TBD> sendQuery(String query)
@@ -78,7 +79,7 @@ Given a key in the form of some string, we can retrieve, set, or remove a datafr
 
 `m.getAndWait(key1); // blocking`
 
-`m.remove(key1); // removes mapping and frees DataFrame memory`
+`m.remove(key1); // removes mapping and returns DataFrame`
 
 ### Open questions:
 
@@ -92,5 +93,5 @@ _File Reading:_ How can we improve the performance of creating a dataframe from 
 
 [Week of March 9] Our project is currently in the planning and preparation stage. Technical debt from the individual components such as the networking layer, the dataframe, and the schema-on-read parser has been resolved. We are able to read from large files and store reasonably sized dataframes. Operations can be carried out on the dataframes such as summation and filtering. At the moment, the network layer is not connected to a distributed Key-Value store. We plan to connect all the individual parts together to form the three layer architecture in the coming week. After that, we will likely need to make performance improvements and do thorough load testing with multi-gigabyte data sets.
 
-[Week of March 16] Our project now has the Key-Value store with operations such as get, put, and wait_and_get, taking in a key and returning a dataframe. We have improved the performance of our system significantly, halving execution time. In order to arrive at this performance boost, we removed the need to copy strings in our columns and arrays. We have changed one of the datatypes - floats - to now be doubles. In getting the trivial example to work for numbers with decimals, we noticed that floats were too small and lost precision after a certain threshold. Thus, doubles allowed us to maintain precision. In changing the datatypes, we had to modify our implementation of schema, columns, serialization, and arrays. The trivial example works for integers as well. We discovered a memory management bug with valgrind where empty schemas (character arrays with a null terminator) were not being appended to correctly. This bug was fixed by splitting our add_column method in schema into two cases (empty schema/non-empty schema). 
+[Week of March 16] Our project now has the Key-Value store with operations such as get, put, remove, and wait_and_get, taking in a key and returning a dataframe. We have improved the performance of our system significantly, halving execution time. In order to arrive at this performance boost, we removed the need to copy strings in our columns and arrays. We have changed one of the datatypes - floats - to now be doubles. In getting the trivial example to work for numbers with decimals, we noticed that floats were too small and lost precision after a certain threshold. Thus, doubles allowed us to maintain precision. In changing the datatypes, we had to modify our implementation of schema, columns, serialization, and arrays. The trivial example works for integers as well. We discovered a memory management bug with valgrind where empty schemas (character arrays with a null terminator) were not being appended to correctly. This bug was fixed by splitting our add_column method in schema into two cases (empty schema/non-empty schema). 
 
