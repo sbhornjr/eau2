@@ -22,11 +22,11 @@ public:
         return str;
     }
 
-    const char* serialize(float f) {
+    const char* serialize(double f) {
         ByteArray* barr = new ByteArray();
-        char flt[16];
-        sprintf(flt, "%f", f);
-        barr->push_string(flt);
+        char dbl[16];
+        sprintf(dbl, "%f", f);
+        barr->push_string(dbl);
         const char* str = barr->as_bytes();
         delete barr;
         return str;
@@ -220,38 +220,38 @@ public:
         return sarr;
     }
 
-    const char* serialize(FloatArray* farr) {
+    const char* serialize(DoubleArray* darr) {
         ByteArray* barr = new ByteArray();
 
         // serialize size
         barr->push_string("siz: ");
-        const char* ser_sz = serialize(farr->size());
+        const char* ser_sz = serialize(darr->size());
         barr->push_string(ser_sz);
         delete[] ser_sz;
 
         // serialize array
         barr->push_string("\narr: ");
-        for (size_t i = 0; i < farr->size() - 1; ++i) {
-            const char* ser_flt = serialize(farr->get(i));
-            barr->push_string(ser_flt);
+        for (size_t i = 0; i < darr->size() - 1; ++i) {
+            const char* ser_dbl = serialize(darr->get(i));
+            barr->push_string(ser_dbl);
             barr->push_string(", ");
-            delete[] ser_flt;
+            delete[] ser_dbl;
         }
 
         // add last element of array
-        const char* ser_flt = serialize(farr->get(farr->size() - 1));
-        barr->push_string(ser_flt);
-        delete[] ser_flt;
+        const char* ser_dbl = serialize(darr->get(darr->size() - 1));
+        barr->push_string(ser_dbl);
+        delete[] ser_dbl;
 
         const char* str = barr->as_bytes();
         delete barr;
         return str;
     }
 
-    FloatArray* get_float_array(const char* str) {
+    DoubleArray* get_double_array(const char* str) {
         size_t arr_size, new_line_loc, i;
 
-        FloatArray* farr = new FloatArray();
+        DoubleArray* darr = new DoubleArray();
 
         // go through lines of str
         i = 0;
@@ -277,25 +277,25 @@ public:
                 i = new_line_loc + 1;
             // this is an ar line
             } else if (strcmp(type_buff, "arr") == 0) {
-                // get the float array line
+                // get the double array line
                 char* ar_line = duplicate(&str[i + 5]);
                 i += 5;
-                // split into tokens and add to farr
-                char* next_float;
-                next_float = strtok(ar_line, ", ");
-                while (next_float != NULL) {
-                    i += strlen(next_float) + 2;
-                    farr->push_back(atof(next_float));
-                    next_float = strtok(NULL, ", ");
+                // split into tokens and add to darr
+                char* next_double;
+                next_double = strtok(ar_line, ", ");
+                while (next_double != NULL) {
+                    i += strlen(next_double) + 2;
+                    darr->push_back(atof(next_double));
+                    next_double = strtok(NULL, ", ");
                 }
                 delete[] ar_line;
             }
         }
 
         // make sure sizes match up
-        assert(arr_size == farr->size());
+        assert(arr_size == darr->size());
 
-        return farr;
+        return darr;
     }
 
     const char* serialize(Message* msg) {
@@ -461,7 +461,7 @@ public:
       const char* ser_ip = serialize(t->senderip_);
       barr->push_string(ser_ip);
       delete[] ser_ip;
-      
+
       const char* str = barr->as_bytes();
       delete barr;
       return str;

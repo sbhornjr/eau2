@@ -135,7 +135,7 @@ class DataFrame : public Object {
     delete schema_;
   }
 
-  /** 
+  /**
    *  create and return a df of 1 col with the values in from of size sz,
    *  and make it the value of the given key in the kvstore */
   DataFrame* from_array(String* key, SDFMap* kv, size_t sz, Array* from) {
@@ -156,13 +156,13 @@ class DataFrame : public Object {
         bc->push_back(ba->get(i));
       }
       df->schema_->add_column('B');
-    } else if (from->as_float() != nullptr) {
-      FloatArray* fa = from->as_float();
-      FloatColumn* fc = c->as_float();
+    } else if (from->as_double() != nullptr) {
+      DoubleArray* da = from->as_double();
+      DoubleColumn* dc = c->as_double();
       for (size_t i = 0; i < sz; ++i) {
-        fc->push_back(fa->get(i));
+        dc->push_back(da->get(i));
       }
-      df->schema_->add_column('F');
+      df->schema_->add_column('D');
     } else if (from->as_string() != nullptr) {
       StringArray* sa = from->as_string();
       StringColumn* sc = c->as_string();
@@ -181,7 +181,7 @@ class DataFrame : public Object {
     cols[0] = c;
     delete[] df->cols_;
     df->cols_ = cols;
-    
+
     kv->put(key, df);
     return df;
   }
@@ -214,8 +214,8 @@ class DataFrame : public Object {
       } else if (type == 'B') {
         BoolColumn* bc = col->as_bool();
         c->push_back(bc->get(i));
-      } else if (type == 'F') {
-        FloatColumn* fc = col->as_float();
+      } else if (type == 'D') {
+        DoubleColumn* fc = col->as_double();
         c->push_back(fc->get(i));
       } else if (type == 'S') {
         StringColumn* sc = col->as_string();
@@ -242,8 +242,8 @@ class DataFrame : public Object {
         c = new IntColumn();
       } else if (type == 'B') {
         c = new BoolColumn();
-      } else if (type == 'F') {
-        c = new FloatColumn();
+      } else if (type == 'D') {
+        c = new DoubleColumn();
       } else if (type == 'S') {
         c = new StringColumn();
       } else {
@@ -267,10 +267,10 @@ class DataFrame : public Object {
     return bc->get(row);
   }
 
-  float get_float(size_t col, size_t row) {
-    FloatColumn* fc = cols_[col]->as_float();
-    assert(fc != nullptr);
-    return fc->get(row);
+  double get_double(size_t col, size_t row) {
+    DoubleColumn* dc = cols_[col]->as_double();
+    assert(dc != nullptr);
+    return dc->get(row);
   }
 
   String* get_string(size_t col, size_t row) {
@@ -294,10 +294,10 @@ class DataFrame : public Object {
     bc->set(row, val);
   }
 
-  void set(size_t col, size_t row, float val) {
-    FloatColumn* fc = cols_[col]->as_float();
-    assert(fc != nullptr);
-    fc->set(row, val);
+  void set(size_t col, size_t row, double val) {
+    DoubleColumn* dc = cols_[col]->as_double();
+    assert(dc != nullptr);
+    dc->set(row, val);
   }
 
   void set(size_t col, size_t row, String* val) {
@@ -320,9 +320,9 @@ class DataFrame : public Object {
       } else if (typ == 'B') {
         BoolColumn* bc = cols_[i]->as_bool();
         row.set(i, bc->get(idx));
-      } else if (typ == 'F') {
-        FloatColumn* fc = cols_[i]->as_float();
-        row.set(i, fc->get(idx));
+      } else if (typ == 'D') {
+        DoubleColumn* dc = cols_[i]->as_double();
+        row.set(i, dc->get(idx));
       } else {
         StringColumn* sc = cols_[i]->as_string();
         row.set(i, sc->get(idx));
@@ -344,9 +344,9 @@ class DataFrame : public Object {
       } else if (typ == 'B') {
         BoolColumn* bc = cols_[i]->as_bool();
         bc->push_back(row.get_bool(i));
-      } else if (typ == 'F') {
-        FloatColumn* fc = cols_[i]->as_float();
-        fc->push_back(row.get_float(i));
+      } else if (typ == 'D') {
+        DoubleColumn* dc = cols_[i]->as_double();
+        dc->push_back(row.get_double(i));
       } else {
         StringColumn* sc = cols_[i]->as_string();
         sc->push_back(row.get_string(i));
@@ -369,9 +369,9 @@ class DataFrame : public Object {
       } else if (typ == 'B') {
         BoolColumn* bc = cols_[i]->as_bool();
         bc->set(idx, row.get_bool(i));
-      } else if (typ == 'F') {
-        FloatColumn* fc = cols_[i]->as_float();
-        fc->set(idx, row.get_float(i));
+      } else if (typ == 'D') {
+        DoubleColumn* dc = cols_[i]->as_double();
+        dc->set(idx, row.get_double(i));
       } else {
         StringColumn* sc = cols_[i]->as_string();
         sc->set(idx, row.get_string(i));

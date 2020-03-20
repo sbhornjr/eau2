@@ -10,7 +10,7 @@
 // class definitions
 class IntArray;
 class BoolArray;
-class FloatArray;
+class DoubleArray;
 class StringArray;
 class ByteArray;
 
@@ -24,7 +24,7 @@ class ByteArray;
  */
 class Array : public Object {
 public:
-    char type_; // one of 'I' (integer), 'B' (boolean), 'F' (float), 'S' (String*)
+    char type_; // one of 'I' (integer), 'B' (boolean), 'D' (double), 'S' (String*)
 
     /** Type converters: Return same Array under its actual type, or
      *  nullptr if of the wrong type.  */
@@ -35,8 +35,8 @@ public:
     // returns this Array as a BoolArray*, or nullptr if not a BoolArray*
     virtual BoolArray* as_bool() {return nullptr;}
 
-    // returns this Array as a FloatArray*, or nullptr if not a FloatArray*
-    virtual FloatArray* as_float() {return nullptr;}
+    // returns this Array as a DoubleArray*, or nullptr if not a DoubleArray*
+    virtual DoubleArray* as_double() {return nullptr;}
 
     // returns this Array as a StringArray*, or nullptr if not a StringArray*
     virtual StringArray* as_string() {return nullptr;}
@@ -51,14 +51,14 @@ public:
     // and it shouldn't have been called. assert false.
     virtual void push_back(int val) { assert(false); }
     virtual void push_back(bool val) { assert(false); }
-    virtual void push_back(float val) { assert(false); }
+    virtual void push_back(double val) { assert(false); }
     virtual void push_back(String* val) { assert(false); }
     virtual void push_back(char val) { assert(false); }
 
     /** Returns the number of elements in the Array. Pure virtual. */
     virtual size_t size() = 0;
 
-    /** Return the type of this Array as a char: 'S', 'B', 'I' and 'F'. */
+    /** Return the type of this Array as a char: 'S', 'B', 'I' and 'D'. */
     char get_type() {
         return type_;
     }
@@ -369,46 +369,46 @@ public:
 };
 
 /*************************************************************************
- * FloatArray::
- * Holds primitive float values, unwrapped.
+ * DoubleArray::
+ * Holds primitive double values, unwrapped.
  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
  */
-class FloatArray : public Array {
+class DoubleArray : public Array {
 public:
 
-    float** arr_;       // internal array of float arrays
-    size_t num_arr_;    // number of float arrays in arr_
-    size_t size_;       // number of floats total in arr_
+    double** arr_;       // internal array of double arrays
+    size_t num_arr_;    // number of double arrays in arr_
+    size_t size_;       // number of doubles total in arr_
 
-    // default constructor - initialize as empty FloatArray
-    FloatArray() {
-        set_type_('F');
+    // default constructor - initialize as empty DoubleArray
+    DoubleArray() {
+        set_type_('D');
         size_ = 0;
         num_arr_ = 0;
-        arr_ = new float*[0];
+        arr_ = new double*[0];
     }
 
     /**
      * constructor with values given - initialize all values into arr_
-     * @param n: number of floats in the args
-     * @param ...: the floats, handled by va_list etc.
+     * @param n: number of doubles in the args
+     * @param ...: the doubles, handled by va_list etc.
      */
-    FloatArray(int n, ...) {
-        set_type_('F');
+    DoubleArray(int n, ...) {
+        set_type_('D');
 
         // each bool* in arr_ will be of size 10
-        float* floats = new float[10];
+        double* doubles = new double[10];
 
         // set the number of num_arr_ we will have based on n
         if (n % 10 == 0) num_arr_ = n / 10;
         else num_arr_ = (n / 10) + 1;
 
         // initialize arr_ and n
-        arr_ = new float*[num_arr_];
-        //arr_[0] = floats;
+        arr_ = new double*[num_arr_];
+        //arr_[0] = doubles;
         size_ = n;
 
-        size_t curr_arr_ = 0;   // the current float* we are at in arr_
+        size_t curr_arr_ = 0;   // the current double* we are at in arr_
         va_list args;           // args given
         va_start(args, n);
 
@@ -416,20 +416,20 @@ public:
         for (size_t i = 0; i < n; ++i) {
             // our array of size 10 is filled - add to arr_
             if (i % 10 == 0 && i != 0) {
-                arr_[curr_arr_] = floats;
+                arr_[curr_arr_] = doubles;
                 ++curr_arr_;
-                floats = new float[10];
+                doubles = new double[10];
             }
-            // add the current float into floats
-            floats[i % 10] = va_arg(args, double);
+            // add the current double into doubles
+            doubles[i % 10] = va_arg(args, double);
         }
         // add the last array into arr_
-        arr_[curr_arr_] = floats;
+        arr_[curr_arr_] = doubles;
         va_end(args);
     }
 
     // destructor - delete arr_ and its sub-arrays
-    ~FloatArray() {
+    ~DoubleArray() {
         for (size_t i = 0; i < num_arr_; ++i) {
             delete[] arr_[i];
         }
@@ -439,7 +439,7 @@ public:
     /** returns true if this is equal to that */
     bool equals(Object* that) {
         if (that == this) return true;
-        FloatArray* x = dynamic_cast<FloatArray*>(that);
+        DoubleArray* x = dynamic_cast<DoubleArray*>(that);
         if (x == nullptr) return false;
         if (size_ != x->size_) return false;
         for (size_t i = 0; i < size_; ++i) {
@@ -458,52 +458,52 @@ public:
     }
 
     /**
-     * gets the float at the given position in the Array
-     * @param idx: index of float to get
-     * @returns the float at that index
+     * gets the double at the given position in the Array
+     * @param idx: index of double to get
+     * @returns the double at that index
      */
-    float get(size_t idx) {
+    double get(size_t idx) {
         assert(idx < size_);
         return arr_[idx / 10][idx % 10];
     }
 
     /**
-     * turns this Array* into an FloatArray* (assuming it is one)
-     * @returns this Array as an FloatArray*
+     * turns this Array* into an DoubleArray* (assuming it is one)
+     * @returns this Array as an DoubleArray*
      */
-    FloatArray* as_float() {
+    DoubleArray* as_double() {
         return this;
     }
 
     /**
      * push the given val to the end of the Array
-     * @param val: float to push back
+     * @param val: double to push back
      */
-    virtual void push_back(float val) {
-        // the last float* in arr_ is full
-        // copy float*s into a new float** - copies pointers but not payload
+    virtual void push_back(double val) {
+        // the last double* in arr_ is full
+        // copy double*s into a new double** - copies pointers but not payload
         if (size_ % 10 == 0) {
             // increment size values
             ++size_;
             ++num_arr_;
 
-            // create new float* and initialize val at first idx
-            float* floats = new float[10];
-            floats[0] = val;
+            // create new double* and initialize val at first idx
+            double* doubles = new double[10];
+            doubles[0] = val;
 
-            // set up a temp float**, overwrite arr_ with new float**
-            float** tmp = arr_;
-            arr_ = new float*[num_arr_];
+            // set up a temp double**, overwrite arr_ with new double**
+            double** tmp = arr_;
+            arr_ = new double*[num_arr_];
 
             // for loop to copy values from temp into arr_
             for (size_t i = 0; i < num_arr_ - 1; ++i) {
                 arr_[i] = tmp[i];
             }
 
-            // add new float* into arr_ and delete the temp
-            arr_[num_arr_ - 1] = floats;
+            // add new double* into arr_ and delete the temp
+            arr_[num_arr_ - 1] = doubles;
             delete[] tmp;
-        // we have room in the last float* of arr_ - add the val
+        // we have room in the last double* of arr_ - add the val
         } else {
             arr_[size_ / 10][size_ % 10] = val;
             ++size_;
@@ -511,18 +511,18 @@ public:
     }
 
     /**
-     * replaces the float at given index with given float
+     * replaces the double at given index with given double
      * @param idx: the index at which to place this value
      * @param val: val to put at the index
      */
-    void set(size_t idx, float val) {
+    void set(size_t idx, double val) {
         assert(idx < size_);
         arr_[idx / 10][idx % 10] = val;
     }
 
     /**
-     * get the amount of floats in the Array
-     * @returns the amount of floats in the Array
+     * get the amount of doubles in the Array
+     * @returns the amount of doubles in the Array
      */
     size_t size() {
         return size_;

@@ -31,10 +31,10 @@ Our implementation of sorer is defined by 5 major sections:
     golden row. Once we do, we go through each of the fields to determine
     its type. We are guaranteed that each field is valid because we already
     checked for this in the previous step. If it has quotes, it is a string.
-    If the field can be cast into a float (numbers with a '.'), then we say it
-    is a float. If it can be cast into an int (numbers) then it is an int,
+    If the field can be cast into a double (numbers with a '.'), then we say it
+    is a double. If it can be cast into an int (numbers) then it is an int,
     unless it is a 0 or 1, then it is a boolean. Otherwise it is a string. We
-    add each of these as strings ("STRING", "FLOAT", etc.) into a vector
+    add each of these as strings ("STRING", "DOUBLE", etc.) into a vector
     called schema. The value in the vector at a given index corresponds to
     the schema of that column.
 

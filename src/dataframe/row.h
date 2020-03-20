@@ -21,7 +21,7 @@ public:
   /** Called for fields of the argument's type with the value of the field. */
   virtual void accept(bool b) = 0;
 
-  virtual void accept(float f) = 0;
+  virtual void accept(double d) = 0;
 
   virtual void accept(int i) = 0;
 
@@ -51,8 +51,8 @@ public:
   virtual void accept(bool b) {
     printf("<%i> ", b);
   }
-  virtual void accept(float f) {
-    printf("<%f> ", f);
+  virtual void accept(double d) {
+    printf("<%f> ", d);
   }
   virtual void accept(int i) {
     printf("<%i> ", i);
@@ -103,8 +103,8 @@ public:
         c = new IntColumn();
       } else if (type == 'B') {
         c = new BoolColumn();
-      } else if (type == 'F') {
-        c = new FloatColumn();
+      } else if (type == 'D') {
+        c = new DoubleColumn();
       } else if (type == 'S') {
         c = new StringColumn();
       } else {
@@ -139,9 +139,9 @@ public:
     }
   }
 
-  void set(size_t col, float val) {
-    assert(schema_->col_type(col) == 'F');
-    FloatColumn* c = dynamic_cast<FloatColumn*>(columns_[col]);
+  void set(size_t col, double val) {
+    assert(schema_->col_type(col) == 'D');
+    DoubleColumn* c = dynamic_cast<DoubleColumn*>(columns_[col]);
     if (c->size() == 0) {
       c->push_back(val);
     } else {
@@ -194,10 +194,10 @@ public:
     BoolColumn* bc = columns_[col]->as_bool();
     return bc->get(0);
   }
-  float get_float(size_t col){
-    assert(schema_->col_type(col) == 'F');
-    FloatColumn* fc = columns_[col]->as_float();
-    return fc->get(0);
+  double get_double(size_t col){
+    assert(schema_->col_type(col) == 'D');
+    DoubleColumn* dc = columns_[col]->as_double();
+    return dc->get(0);
   }
   String* get_string(size_t col){
     assert(schema_->col_type(col) == 'S');
@@ -230,9 +230,9 @@ public:
       } else if (type == 'B') {
         BoolColumn* bc = columns_[i]->as_bool();
         f.accept(bc->get(0));
-      } else if (type == 'F') {
-        FloatColumn* fc = columns_[i]->as_float();
-        f.accept(fc->get(0));
+      } else if (type == 'D') {
+        DoubleColumn* dc = columns_[i]->as_double();
+        f.accept(dc->get(0));
       } else if (type == 'S') {
         StringColumn* sc = columns_[i]->as_string();
         f.accept(sc->get(0));
@@ -334,18 +334,18 @@ public:
 
 /**
  * TEST ROWER
- * Rower used to add 1 to every int and float in a DF.
+ * Rower used to add 1 to every int and double in a DF.
  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
  */
 class PlusOneRower : public Rower {
 public:
 
-  // for each value in the row, if it is a int/float, add 1 to it.
+  // for each value in the row, if it is a int/double, add 1 to it.
   // return true because values were changed.
   bool accept(Row& r) {
     for (size_t i = 0; i < r.width(); ++i) {
       if (r.col_type(i) == 'I') r.set(i, r.get_int(i) + 1);
-      else if (r.col_type(i) == 'F') r.set(i, (float)(r.get_float(i) + 1.0));
+      else if (r.col_type(i) == 'D') r.set(i, (double)(r.get_double(i) + 1.0));
     }
     return true;
   }

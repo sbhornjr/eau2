@@ -238,16 +238,16 @@ public:
                     types += 'B';
                     continue;
                 }
-                // Case: found a + or - (FLOAT || INT) -> trim field
+                // Case: found a + or - (DOUBLE || INT) -> trim field
                 if (field[0] == '+' || field[0] == '-') {
                     field = field.substr(1, field.length());
                 }
-                // Case: found a period. (FLOAT || STRING)
+                // Case: found a period. (DOUBLE || STRING)
                 if (field.find('.') != string::npos) {
-                    // try stof -> succeed = float, fail = string
+                    // try stod -> succeed = double, fail = string
                     try {
-                        stof(field);
-                        types += 'F';
+                        stod(field);
+                        types += 'D';
                     } catch (...) {
                         types += 'S';
                     }
@@ -397,10 +397,10 @@ public:
                         validated.set(i, str);
                         //delete str;
                     }
-                    // Case: Float, push back if one of <FLOAT> <INT> <BOOL>
-                    else if(schema->col_type(i) == 'F') {
+                    // Case: Double, push back if one of <DOUBLE> <INT> <BOOL>
+                    else if(schema->col_type(i) == 'D') {
                         try {
-                            float f = stof(tmp[i]);
+                            double f = stod(tmp[i]);
                             //string toAdd = "";
                             //toAdd += tmp[i];
                             //if (tmp[i].find('.') == string::npos) {
@@ -409,7 +409,7 @@ public:
                             validated.set(i, f);
                         } catch (...) {
                             try {
-                                float f = stoll(tmp[i]);
+                                double f = stoll(tmp[i]);
                                 //string toAdd = "";
                                 //toAdd += tmp[i];
                                 //if (tmp[i].find('.') == string::npos) {

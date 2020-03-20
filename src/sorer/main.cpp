@@ -42,8 +42,8 @@ void print_col_idx(vector<size_t> args, DataFrame* df) {
   }
   else if (scm.col_type(args[0]) == 'B') {
     cout << df->get_bool(args[0], args[1]) << endl;
-  } else if (scm.col_type(args[0]) == 'F') {
-    cout << df->get_float(args[0], args[1]) << endl;
+  } else if (scm.col_type(args[0]) == 'D') {
+    cout << df->get_double(args[0], args[1]) << endl;
   }
 }
 

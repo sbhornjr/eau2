@@ -12,7 +12,7 @@ using namespace std;
 // class definitions
 class IntColumn;
 class BoolColumn;
-class FloatColumn;
+class DoubleColumn;
 class StringColumn;
 
 size_t ARR_SIZE = 256;
@@ -29,7 +29,7 @@ size_t BOOL_ARR_SIZE = 1024;
  */
 class Column : public Object {
 public:
-    char type_; // one of 'I' (integer), 'B' (boolean), 'F' (float), 'S' (String*)
+    char type_; // one of 'I' (integer), 'B' (boolean), 'D' (double), 'S' (String*)
 
     /** Type converters: Return same column under its actual type, or
      *  nullptr if of the wrong type.  */
@@ -40,8 +40,8 @@ public:
     // returns this Column as a BoolColumn*, or nullptr if not a BoolColumn*
     virtual BoolColumn* as_bool() {return nullptr;}
 
-    // returns this Column as a FloatColumn*, or nullptr if not a FloatColumn*
-    virtual FloatColumn* as_float() {return nullptr;}
+    // returns this Column as a DoubleColumn*, or nullptr if not a DoubleColumn*
+    virtual DoubleColumn* as_double() {return nullptr;}
 
     // returns this Column as a StringColumn*, or nullptr if not a StringColumn*
     virtual StringColumn* as_string() {return nullptr;}
@@ -53,7 +53,7 @@ public:
     // and it shouldn't have been called. assert false.
     virtual void push_back(int val) { assert(false); }
     virtual void push_back(bool val) { assert(false); }
-    virtual void push_back(float val) { assert(false); }
+    virtual void push_back(double val) { assert(false); }
     virtual void push_back(String* val) { assert(false); }
 
     virtual void delete_all() {}
@@ -61,7 +61,7 @@ public:
     /** Returns the number of elements in the column. Pure virtual. */
     virtual size_t size() = 0;
 
-    /** Return the type of this column as a char: 'S', 'B', 'I' and 'F'. */
+    /** Return the type of this column as a char: 'S', 'B', 'I' and 'D'. */
     char get_type() {
         return type_;
     }
@@ -83,7 +83,7 @@ class IntColumn : public Column {
 public:
 
     int** arr_;         // internal array of int arrays
-    size_t num_arr_;    // number of int arrays in arr_ 
+    size_t num_arr_;    // number of int arrays in arr_
     size_t size_;       // number of ints total in arr_
 
 
@@ -358,46 +358,46 @@ public:
 };
 
 /*************************************************************************
- * FloatColumn::
- * Holds primitive float values, unwrapped.
+ * DoubleColumn::
+ * Holds primitive double values, unwrapped.
  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
  */
-class FloatColumn : public Column {
+class DoubleColumn : public Column {
 public:
 
-    float** arr_;       // internal array of float arrays
-    size_t num_arr_;    // number of float arrays in arr_
-    size_t size_;       // number of floats total in arr_
+    double** arr_;       // internal array of double arrays
+    size_t num_arr_;    // number of double arrays in arr_
+    size_t size_;       // number of doubles total in arr_
 
-    // default constructor - initialize as empty FloatColumn
-    FloatColumn() {
-        set_type_('F');
+    // default constructor - initialize as empty DoubleColumn
+    DoubleColumn() {
+        set_type_('D');
         size_ = 0;
         num_arr_ = 0;
-        arr_ = new float*[0];
+        arr_ = new double*[0];
     }
 
     /**
      * constructor with values given - initialize all values into arr_
-     * @param n: number of floats in the args
-     * @param ...: the floats, handled by va_list etc.
+     * @param n: number of doubles in the args
+     * @param ...: the doubles, handled by va_list etc.
      */
-    FloatColumn(int n, ...) {
-        set_type_('F');
+    DoubleColumn(int n, ...) {
+        set_type_('D');
 
         // each bool* in arr_ will be of size 10
-        float* floats = new float[ARR_SIZE];
+        double* doubles = new double[ARR_SIZE];
 
         // set the number of num_arr_ we will have based on n
         if (n % ARR_SIZE == 0) num_arr_ = n / ARR_SIZE;
         else num_arr_ = (n / ARR_SIZE) + 1;
 
         // initialize arr_ and n
-        arr_ = new float*[num_arr_];
+        arr_ = new double*[num_arr_];
         size_t sn = n;
         size_ = sn;
 
-        size_t curr_arr_ = 0;   // the current float* we are at in arr_
+        size_t curr_arr_ = 0;   // the current double* we are at in arr_
         va_list args;           // args given
         va_start(args, n);
 
@@ -405,20 +405,20 @@ public:
         for (size_t i = 0; i < sn; ++i) {
             // our array of size is filled - add to arr_
             if (i % ARR_SIZE == 0 && i != 0) {
-                arr_[curr_arr_] = floats;
+                arr_[curr_arr_] = doubles;
                 ++curr_arr_;
-                floats = new float[ARR_SIZE];
+                doubles = new double[ARR_SIZE];
             }
-            // add the current float into floats
-            floats[i % ARR_SIZE] = va_arg(args, double);
+            // add the current double into doubles
+            doubles[i % ARR_SIZE] = va_arg(args, double);
         }
         // add the last array into arr_
-        arr_[curr_arr_] = floats;
+        arr_[curr_arr_] = doubles;
         va_end(args);
     }
 
     // destructor - delete arr_ and its sub-arrays
-    ~FloatColumn() {
+    ~DoubleColumn() {
         for (size_t i = 0; i < num_arr_; ++i) {
             delete[] arr_[i];
         }
@@ -426,52 +426,52 @@ public:
     }
 
     /**
-     * gets the float at the given position in the column
-     * @param idx: index of float to get
-     * @returns the float at that index
+     * gets the double at the given position in the column
+     * @param idx: index of double to get
+     * @returns the double at that index
      */
-    float get(size_t idx) {
+    double get(size_t idx) {
         assert(idx < size_);
         return arr_[idx / ARR_SIZE][idx % ARR_SIZE];
     }
 
     /**
-     * turns this Column* into an FloatColumn* (assuming it is one)
-     * @returns this column as an FloatColumn*
+     * turns this Column* into an DoubleColumn* (assuming it is one)
+     * @returns this column as an DoubleColumn*
      */
-    FloatColumn* as_float() {
+    DoubleColumn* as_double() {
         return this;
     }
 
     /**
      * push the given val to the end of the column
-     * @param val: float to push back
+     * @param val: double to push back
      */
-    virtual void push_back(float val) {
-        // the last float* in arr_ is full
-        // copy float*s into a new float** - copies pointers but not payload
+    virtual void push_back(double val) {
+        // the last double* in arr_ is full
+        // copy double*s into a new double** - copies pointers but not payload
         if (size_ % ARR_SIZE == 0) {
             // increment size values
             ++size_;
             ++num_arr_;
 
-            // create new float* and initialize val at first idx
-            float* floats = new float[ARR_SIZE];
-            floats[0] = val;
+            // create new double* and initialize val at first idx
+            double* doubles = new double[ARR_SIZE];
+            doubles[0] = val;
 
-            // set up a temp float**, overwrite arr_ with new float**
-            float** tmp = arr_;
-            arr_ = new float*[num_arr_];
+            // set up a temp double**, overwrite arr_ with new double**
+            double** tmp = arr_;
+            arr_ = new double*[num_arr_];
 
             // for loop to copy values from temp into arr_
             for (size_t i = 0; i < num_arr_ - 1; ++i) {
                 arr_[i] = tmp[i];
             }
 
-            // add new float* into arr_ and delete the temp
-            arr_[num_arr_ - 1] = floats;
+            // add new double* into arr_ and delete the temp
+            arr_[num_arr_ - 1] = doubles;
             delete[] tmp;
-        // we have room in the last float* of arr_ - add the val
+        // we have room in the last double* of arr_ - add the val
         } else {
             arr_[size_ / ARR_SIZE][size_ % ARR_SIZE] = val;
             ++size_;
@@ -479,18 +479,18 @@ public:
     }
 
     /**
-     * replaces the float at given index with given float
+     * replaces the double at given index with given double
      * @param idx: the index at which to place this value
      * @param val: val to put at the index
      */
-    void set(size_t idx, float val) {
+    void set(size_t idx, double val) {
         assert(idx < size_);
         arr_[idx / ARR_SIZE][idx % ARR_SIZE] = val;
     }
 
     /**
-     * get the amount of floats in the column
-     * @returns the amount of floats in the column
+     * get the amount of doubles in the column
+     * @returns the amount of doubles in the column
      */
     size_t size() {
         return size_;

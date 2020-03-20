@@ -50,7 +50,7 @@ test:
 	./sorer -f "data.sor" -from 0 -len 500 -print_col_type 0 # exp. BOOL
 	./sorer -f "data.sor" -from 0 -len 500 -print_col_type 1 # exp. INT
 	./sorer -f "data.sor" -from 0 -len 500 -print_col_type 2 # exp. STRING
-	./sorer -f "data.sor" -from 0 -len 500 -print_col_type 3 # exp. FLOAT
+	./sorer -f "data.sor" -from 0 -len 500 -print_col_type 3 # exp. DOUBLE
 	./sorer -f "data.sor" -from 0 -len 500 -print_col_type 4 # exp. INT
 
 	./sorer -f "data.sor" -from 0 -len 500 -print_col_idx 0 0 # exp. 0
