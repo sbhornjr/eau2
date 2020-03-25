@@ -8,7 +8,22 @@
 class Trivial : public Application {
 public:
 
-  Trivial(size_t idx) : Application(idx) {}
+  String* key_int;
+  String* key_double;
+
+  Trivial(size_t idx) : Application(idx) {
+    key_int = new String("int-triv");
+    key_double = new String("double-triv");
+    run();
+  }
+
+  void run() {
+    run_int();
+    printf("trivial example for IntArray complete and successful.\n\n");
+
+    run_double();
+    printf("trivial example for DoubleArray complete and successful.\n\n");
+  }
 
   void run_int() {
 
@@ -24,18 +39,16 @@ public:
     Schema s("");
     DataFrame d(s);
 
-    String* key = new String("triv");
-    DataFrame* df = d.from_array(key, &kv, SZ, vals);
+    DataFrame* df = d.from_array(key_int, &kv, SZ, vals);
 
     assert(df->get_int(0,1) == 1);
 
-    DataFrame* df2 = kv.get(key);
+    DataFrame* df2 = kv.get(key_int);
     for (size_t i = 0; i < SZ; ++i) sum -= df2->get_int(0, i);
 
     assert(sum == 0);
 
     delete vals;
-    delete key;
     delete df;
   }
 
@@ -52,17 +65,16 @@ public:
     Schema s("");
     DataFrame d(s);
 
-    String* key = new String("triv");
-    DataFrame* df = d.from_array(key, &kv, SZ, vals);
+    DataFrame* df = d.from_array(key_double, &kv, SZ, vals);
+
     assert(df->get_double(0,1) == 1);
 
-    DataFrame* df2 = kv.get(key);
-
+    DataFrame* df2 = kv.get(key_double);
     for (size_t i = 0; i < SZ; ++i) sum -= df2->get_double(0, i);
+
     assert(sum == 0);
 
     delete vals;
-    delete key;
     delete df;
   }
 };

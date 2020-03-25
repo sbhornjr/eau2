@@ -592,7 +592,7 @@ public:
                 strings = new String*[STRING_ARR_SIZE];
             }
             // add the current String* to strings - copy value
-            String* s = new String(*va_arg(args, String*));
+            String* s = va_arg(args, String*);
             strings[i % STRING_ARR_SIZE] = s;
         }
         // add the last array into arr_
@@ -668,7 +668,7 @@ public:
      */
     void set(size_t idx, String* val) {
         assert(idx < size_);
-        String* s = new String(*val);
+        String* s = val;
         delete arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
         arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = s;
     }
@@ -687,7 +687,7 @@ public:
 
             // create new String** and initialize with val at first idx
             String** strings = new String*[STRING_ARR_SIZE];
-            String* s = new String(*val);
+            String* s = val;
             strings[0] = s;
 
             // set up a temp String***, overwrite arr_ with new String***
@@ -704,7 +704,7 @@ public:
             delete[] tmp;
         // we have room in the last String** of arr_ - add the val
         } else {
-            String* s = new String(*val);
+            String* s = val;
             arr_[size_ / STRING_ARR_SIZE][size_ % STRING_ARR_SIZE] = s;
             ++size_;
         }
