@@ -38,6 +38,14 @@ void milestone2() {
     Trivial t(0);
 }
 
+
+/**
+  * runs the example code given with a distributed kv store
+  */
+void milestone3() {
+    Demo d(0);
+}
+
 int main(int argc, const char** argv) {
     if (argc != 2) {
         cout << "please enter ./eau2 <filename>" << endl;
