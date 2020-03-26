@@ -1,10 +1,31 @@
+#pragma once
+
+#include "dataframe.h"
+#include "application.h"
+#include "string.h"
+#include "array.h"
+#include "key.h"
+
 class Demo : public Application {
 public:
-  Key main("main",0);
-  Key verify("verif",0);
-  Key check("ck",0);
+
+  String* m = new String("main");
+  String* v = new String("verif");
+  String* c = new String("ck");
+  Key* main = new Key(m,0);
+  Key* verify = new Key(v,0);
+  Key* check = new Key(c,0);
 
   Demo(size_t idx): Application(idx) {}
+
+  ~Demo() {
+    delete m;
+    delete v;
+    delete c;
+    delete main;
+    delete verify;
+    delete check;
+  }
 
   void run_() override {
     switch(this_node()) {
@@ -24,7 +45,7 @@ public:
   }
 
   void counter() {
-    DataFrame* v = kv.waitAndGet(main);
+    DataFrame* v = kv.getAndWait(main);
     size_t sum = 0;
     for (size_t i = 0; i < 100*1000; ++i) sum += v->get_double(0,i);
     p("The sum is  ").pln(sum);
@@ -32,8 +53,8 @@ public:
   }
 
   void summarizer() {
-    DataFrame* result = kv.waitAndGet(verify);
-    DataFrame* expected = kv.waitAndGet(check);
+    DataFrame* result = kv.getAndWait(verify);
+    DataFrame* expected = kv.getAndWait(check);
     pln(expected->get_double(0,0)==result->get_double(0,0) ? "SUCCESS":"FAILURE");
   }
 };

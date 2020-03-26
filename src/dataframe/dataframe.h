@@ -138,7 +138,7 @@ class DataFrame : public Object {
   /**
    *  create and return a df of 1 col with the values in from of size sz,
    *  and make it the value of the given key in the kvstore */
-  DataFrame* from_array(String* key, SDFMap* kv, size_t sz, Array* from) {
+  DataFrame* from_array(Key* key, KDFMap* kv, size_t sz, Array* from) {
     Schema scm("");
     DataFrame* df = new DataFrame(scm);
     Column* c = get_new_col_(from->get_type());

@@ -2,6 +2,7 @@
 
 #pragma once
 #include "string.h"
+#include "key.h"
 #include "column.h"
 #include "dataframe.h"
 #include <math.h>
@@ -14,6 +15,7 @@ class IntArray;
 class BoolArray;
 class DoubleArray;
 class StringArray;
+class KeyArray;
 class ByteArray;
 class DFArray;
 class DataFrame;
@@ -661,8 +663,8 @@ public:
     }
 
     /**
-     * Acquire ownership fo the string.
-     * replaces the int at given index with given String*
+     * Acquire ownership of the string.
+     * replaces the String* at given index with given String*
      * @param idx: the index at which to place this value
      * @param val: val to put at the index
      */
@@ -995,7 +997,7 @@ public:
 
     /**
      * Acquire ownership for the df.
-     * replaces the int at given index with given DF*
+     * replaces the DF* at given index with given DF*
      * @param idx: the index at which to place this value
      * @param val: val to put at the index
      */
@@ -1056,6 +1058,202 @@ public:
     /**
      * get the amount of Strings in the Array
      * @returns the amount of Strings in the Array
+     */
+    size_t size() {
+        return size_;
+    }
+};
+
+
+/*************************************************************************
+ * KeyArray::
+ * Holds key pointers. The keys are external (not owned).  Nullptr is a valid
+ * value.
+ * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
+ */
+class KeyArray : public Array {
+public:
+
+    Key*** arr_;     // internal array of Key* arrays
+    size_t num_arr_;    // number of Key* arrays there are in arr_
+    size_t size_;       // number of Key*s total there are in arr_
+
+    // default construtor - initialize as an empty StringArray
+    KeyArray() {
+        set_type_('K');
+        size_ = 0;
+        num_arr_ = 0;
+        arr_ = new Key**[0];
+    }
+
+    /**
+     * constructor with values given - initialize all values into arr_
+     * @param n: number of Key* in the args
+     * @param ...: the Keys, handled by va_list etc.
+     */
+    KeyArray(int n, ...) {
+        set_type_('K');
+
+        // each String** in arr_ will be of size 10
+        Key** keys = new Key*[STRING_ARR_SIZE];
+
+        // set the number of num_arr_ we will have based on n
+        if (n % STRING_ARR_SIZE == 0) num_arr_ = n / STRING_ARR_SIZE;
+        else num_arr_ = (n / STRING_ARR_SIZE) + 1;
+
+        // initialize arr_ and n
+        arr_ = new Key**[num_arr_];
+        size_t sn = n;
+        size_ = n;
+
+        size_t curr_arr_ = 0;   // the current String** we are at in arr_
+        va_list args;           // args given
+        va_start(args, n);
+
+        // for loop to fill arr_
+        for (size_t i = 0; i < sn; ++i) {
+            // our array of size is filled - add to arr_
+            if (i % STRING_ARR_SIZE == 0 && i != 0) {
+                arr_[curr_arr_] = keys;
+                ++curr_arr_;
+                keys = new Key*[STRING_ARR_SIZE];
+            }
+            // add the current Key* to keys - copy value
+            Key* k = va_arg(args, Key*);
+            keys[i % STRING_ARR_SIZE] = k;
+        }
+        // add the last array into arr_
+        arr_[curr_arr_] = keys;
+        va_end(args);
+    }
+
+    // destructor - delete arr_, its sub-arrays, and their keys
+    ~KeyArray() {
+        for (size_t i = 0; i < num_arr_; ++i) {
+            delete[] arr_[i];
+        }
+        delete[] arr_;
+    }
+
+    /** delete all keys */
+    void delete_all() {
+        for (size_t i = 0; i < num_arr_; ++i) {
+            for (size_t j = 0; j < STRING_ARR_SIZE && (i * STRING_ARR_SIZE) + j < size_; ++j) {
+                delete arr_[i][j];
+            }
+            delete[] arr_[i];
+        }
+        size_ = 0;
+        num_arr_ = 0;
+        delete[] arr_;
+        arr_ = new Key**[num_arr_];
+    }
+
+    /** returns true if this is equal to that */
+    bool equals(Object* that) {
+        if (that == this) return true;
+        KeyArray* x = dynamic_cast<KeyArray*>(that);
+        if (x == nullptr) return false;
+        if (size_ != x->size_) return false;
+        for (size_t i = 0; i < size_; ++i) {
+            if (!get(i)->equals(x->get(i))) return false;
+        }
+        return true;
+    }
+
+    /** gets the hash code value */
+    size_t hash() {
+        size_t hash = 0;
+        for (size_t i = 0; i < size_; ++i) {
+            hash += get(i)->hash();
+        }
+        return hash;
+    }
+
+    /**
+     * turns this Array* into an KeyArray* (assuming it is one)
+     * @returns this Array as an KeyArray*
+     */
+    KeyArray* as_key() {
+        return this;
+    }
+
+    /** Returns the key at idx; undefined on invalid idx.
+     * @param idx: index of Key* to get
+     * @returns the Key* at that index
+     */
+    Key* get(size_t idx) {
+        assert(idx < size_);
+        return arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
+    }
+
+    /**
+     * Acquire ownership of the Key.
+     * replaces the Key* at given index with given Key*
+     * @param idx: the index at which to place this value
+     * @param val: val to put at the index
+     */
+    void set(size_t idx, Key* val) {
+        assert(idx < size_);
+        Key* k = val;
+        delete arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
+        arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = k;
+    }
+
+    /**
+     * push the given val to the end of the Array
+     * @param val: Key* to push back
+     */
+    void push_back(Key* val) {
+        // the last Key** in arr_ is full
+        // copy Key**s into a new Key*** - copies pointers but not payload
+        if (size_ % STRING_ARR_SIZE == 0) {
+            // increment size values
+            ++size_;
+            ++num_arr_;
+
+            // create new Key** and initialize with val at first idx
+            Key** keys = new Key*[STRING_ARR_SIZE];
+            Key* k = val;
+            keys[0] = k;
+
+            // set up a temp Key***, overwrite arr_ with new Key***
+            Key*** tmp = arr_;
+            arr_ = new Key**[num_arr_];
+
+            // for loop to copy values from temp into arr_
+            for (size_t i = 0; i < num_arr_ - 1; ++i) {
+                arr_[i] = tmp[i];
+            }
+
+            // add new Key** into arr_ and delete the temp
+            arr_[num_arr_ - 1] = keys;
+            delete[] tmp;
+        // we have room in the last Key** of arr_ - add the val
+        } else {
+            Key* k = val;
+            arr_[size_ / STRING_ARR_SIZE][size_ % STRING_ARR_SIZE] = k;
+            ++size_;
+        }
+    }
+
+    /** remove Key at given idx */
+    void remove(size_t idx) {
+        assert(idx < size_);
+        if (idx == size_ - 1) {
+            arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = NULL;
+        } else {
+            for (size_t i = idx; i < size_; ++i) {
+                set(i, arr_[(i + 1) / STRING_ARR_SIZE][(i + 1) % STRING_ARR_SIZE]);
+            }
+        }
+        --size_;
+        if (size_ % STRING_ARR_SIZE == 0) --num_arr_;
+    }
+
+    /**
+     * get the amount of Keys in the Array
+     * @returns the amount of Keys in the Array
      */
     size_t size() {
         return size_;

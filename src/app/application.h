@@ -5,7 +5,7 @@
 
 class Application : public Object {
 public:
-    SDFMap kv;
+    KDFMap kv;
     size_t idx;
 
     /** constructor taking in the idx */
@@ -13,7 +13,7 @@ public:
         idx = i;
     }
 
-    virtual void run() {}
+    virtual void run_() {}
 
     /** which node is this */
     size_t this_node() {

@@ -8,16 +8,20 @@
 class Trivial : public Application {
 public:
 
-  String* key_int;
-  String* key_double;
+  Key* key_int;
+  Key* key_double;
 
   Trivial(size_t idx) : Application(idx) {
-    key_int = new String("int-triv");
-    key_double = new String("double-triv");
-    run();
+    String* s1 = new String("int-triv");
+    String* s2 = new String("double-triv");
+    key_int = new Key(s1, 0);
+    key_double = new Key(s2, 0);
+    run_();
+    delete s1;
+    delete s2;
   }
 
-  void run() {
+  void run_() {
     run_int();
     printf("trivial example for IntArray complete and successful.\n\n");
 
