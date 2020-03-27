@@ -194,9 +194,8 @@ class DataFrame : public Object {
     Schema scm("");
     DataFrame* df = new DataFrame(scm);
     Column* c = get_new_col_('I');
-    IntArray* ia = new IntArray(1, val);
     IntColumn* ic = c->as_int();
-    ic->push_back(ia->get(0));
+    ic->push_back(val);
     df->schema_->add_column('I');
     df->schema_->numrows_ = 1;
 
@@ -217,9 +216,8 @@ class DataFrame : public Object {
     Schema scm("");
     DataFrame* df = new DataFrame(scm);
     Column* c = get_new_col_('D');
-    DoubleArray* da = new DoubleArray(1, val);
     DoubleColumn* dc = c->as_double();
-    dc->push_back(da->get(0));
+    dc->push_back(val);
     df->schema_->add_column('D');
     df->schema_->numrows_ = 1;
 
@@ -239,9 +237,8 @@ class DataFrame : public Object {
     Schema scm("");
     DataFrame* df = new DataFrame(scm);
     Column* c = get_new_col_('B');
-    BoolArray* ba = new BoolArray(1, val);
     BoolColumn* bc = c->as_bool();
-    bc->push_back(ba->get(0));
+    bc->push_back(val);
     df->schema_->add_column('B');
     df->schema_->numrows_ = 1;
 
@@ -262,9 +259,8 @@ class DataFrame : public Object {
     Schema scm("");
     DataFrame* df = new DataFrame(scm);
     Column* c = get_new_col_('S');
-    StringArray* sa = new StringArray(1, val);
     StringColumn* sc = c->as_string();
-    sc->push_back(sa->get(0));
+    sc->push_back(val);
     df->schema_->add_column('S');
     df->schema_->numrows_ = 1;
 

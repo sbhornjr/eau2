@@ -12,7 +12,6 @@ public:
   DataFrame* df;
   DataFrame* df2;
   DataFrame* df3;
-  DoubleArray* vals;
 
   String* m = new String("main");
   String* v = new String("verif");
@@ -43,8 +42,8 @@ public:
   }
 
   void producer() {
+    DoubleArray* vals = new DoubleArray();
     size_t SZ = 100*1000;
-    vals = new DoubleArray();
 
     double sum = 0;
     for (size_t i = 0; i < SZ; ++i) {
@@ -52,10 +51,9 @@ public:
       sum += vals->get(i);
     }
 
-    Schema s("");
-    DataFrame d(s);
-    df = d.from_array(main, getKVStore(), SZ, vals);
-    df2 = d.from_scalar(check, getKVStore(), sum);
+    df = df->from_array(main, getKVStore(), SZ, vals);
+    df2 = df2->from_scalar(check, getKVStore(), sum);
+    delete vals;
   }
 
   void counter() {
@@ -67,16 +65,17 @@ public:
       sum += v->get_double(0,i);
     }
     p("The sum is  ").pln(sum);
+    delete v;
 
-    Schema s("");
-    DataFrame d(s);
-    df3 = d.from_scalar(verify, getKVStore(), sum);
+    df3 = df3->from_scalar(verify, getKVStore(), sum);
   }
 
   void summarizer() {
     DataFrame* result = getKVStore()->getAndWait(verify);
     DataFrame* expected = getKVStore()->getAndWait(check);
     pln(expected->get_double(0,0)==result->get_double(0,0) ? "SUCCESS":"FAILURE");
+    delete result;
+    delete expected;
   }
 };
 
