@@ -15,7 +15,7 @@ class BoolColumn;
 class DoubleColumn;
 class StringColumn;
 
-size_t ARR_SIZE = 256;
+size_t ARR_SIZE = 256 * 100;
 size_t STRING_ARR_SIZE = 128;
 size_t BOOL_ARR_SIZE = 1024;
 
