@@ -186,6 +186,97 @@ class DataFrame : public Object {
     return df;
   }
 
+  /**
+   *  Create and return a df of 1 value (scalar). Integer Version.
+   *  This would be useful for storing a value such as a sum.
+   *  Also assigns the dataframe to a key in the KDFMapping. */
+  DataFrame* from_scalar(Key* key, KDFMap* kv, int val) {
+    Schema scm("");
+    DataFrame* df = new DataFrame(scm);
+    Column* c = get_new_col_('I');
+    IntArray* ia = new IntArray(1, val);
+    IntColumn* ic = c->as_int();
+    ic->push_back(ia->get(0));
+    df->schema_->add_column('I');
+    df->schema_->numrows_ = 1;
+
+    Column** cols = new Column*[1];
+    cols[0] = c;
+    delete[] df->cols_;
+    df->cols_ = cols;
+
+    kv->put(key, df);
+    return df;
+  }
+
+  /**
+   *  Create and return a df of 1 value (scalar). Double Version.
+   *  This would be useful for storing a value such as a sum.
+   *  Also assigns the dataframe to a key in the KDFMapping. */
+  DataFrame* from_scalar(Key* key, KDFMap* kv, double val) {
+    Schema scm("");
+    DataFrame* df = new DataFrame(scm);
+    Column* c = get_new_col_('D');
+    DoubleArray* da = new DoubleArray(1, val);
+    DoubleColumn* dc = c->as_double();
+    dc->push_back(da->get(0));
+    df->schema_->add_column('D');
+    df->schema_->numrows_ = 1;
+
+    Column** cols = new Column*[1];
+    cols[0] = c;
+    delete[] df->cols_;
+    df->cols_ = cols;
+
+    kv->put(key, df);
+    return df;
+  }
+
+  /**
+   *  Create and return a df of 1 value (scalar). Boolean Version.
+   *  Also assigns the dataframe to a key in the KDFMapping. */
+  DataFrame* from_scalar(Key* key, KDFMap* kv, bool val) {
+    Schema scm("");
+    DataFrame* df = new DataFrame(scm);
+    Column* c = get_new_col_('B');
+    BoolArray* ba = new BoolArray(1, val);
+    BoolColumn* bc = c->as_bool();
+    bc->push_back(ba->get(0));
+    df->schema_->add_column('B');
+    df->schema_->numrows_ = 1;
+
+    Column** cols = new Column*[1];
+    cols[0] = c;
+    delete[] df->cols_;
+    df->cols_ = cols;
+
+    kv->put(key, df);
+    return df;
+  }
+
+  /**
+   *  Create and return a df of 1 value (scalar). String Version.
+   *  Possible uses are a concatenated String.
+   *  Also assigns the dataframe to a key in the KDFMapping. */
+  DataFrame* from_scalar(Key* key, KDFMap* kv, String* val) {
+    Schema scm("");
+    DataFrame* df = new DataFrame(scm);
+    Column* c = get_new_col_('S');
+    StringArray* sa = new StringArray(1, val);
+    StringColumn* sc = c->as_string();
+    sc->push_back(sa->get(0));
+    df->schema_->add_column('S');
+    df->schema_->numrows_ = 1;
+
+    Column** cols = new Column*[1];
+    cols[0] = c;
+    delete[] df->cols_;
+    df->cols_ = cols;
+
+    kv->put(key, df);
+    return df;
+  }
+
   /** Returns the dataframe's schema. Modifying the schema after a dataframe
     * has been created in undefined. */
   Schema& get_schema() {

@@ -163,7 +163,7 @@ class KDFMap: public Map {
 		 */
 		DataFrame* getAndWait(Key* key) {
 			int ind = -1;
-			while (ind != -1) {
+			while (ind == -1) {
 				for (size_t i = 0; i < size_; ++i) {
 					if (key->equals(keys_->get(i))) {
 						ind = i;

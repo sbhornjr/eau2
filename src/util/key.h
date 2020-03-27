@@ -50,12 +50,14 @@ public:
         return hash;
   }
 
-  /** Compare two keys. */
+  /** Compare two keys for their name and home node. */
   bool equals(Object* other) {
+
       if (other == this) return true;
+
       Key* x = dynamic_cast<Key*>(other);
       if (x == nullptr) return false;
-      if (name_ != x->getName()) return false;
+      if (!name_->equals(x->getName())) return false;
       if (homeNode_ != x->getHomeNode()) return false;
 
       return true;

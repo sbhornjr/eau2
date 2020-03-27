@@ -9,6 +9,11 @@
 class Demo : public Application {
 public:
 
+  DataFrame* df;
+  DataFrame* df2;
+  DataFrame* df3;
+  DoubleArray* vals;
+
   String* m = new String("main");
   String* v = new String("verif");
   String* c = new String("ck");
@@ -16,7 +21,9 @@ public:
   Key* verify = new Key(v,0);
   Key* check = new Key(c,0);
 
-  Demo(size_t idx): Application(idx) {}
+  Demo(size_t idx, KDFMap* kv): Application(idx, kv) {
+    run_();
+  }
 
   ~Demo() {
     delete m;
@@ -37,24 +44,58 @@ public:
 
   void producer() {
     size_t SZ = 100*1000;
-    double* vals = new double[SZ];
+    vals = new DoubleArray();
+
     double sum = 0;
-    for (size_t i = 0; i < SZ; ++i) sum += vals[i] = i;
-    DataFrame::fromArray(&main, &kv, SZ, vals);
-    DataFrame::fromScalar(&check, &kv, sum);
+    for (size_t i = 0; i < SZ; ++i) {
+      vals->push_back(i);
+      sum += vals->get(i);
+    }
+
+    Schema s("");
+    DataFrame d(s);
+    df = d.from_array(main, getKVStore(), SZ, vals);
+    df2 = d.from_scalar(check, getKVStore(), sum);
   }
 
   void counter() {
-    DataFrame* v = kv.getAndWait(main);
-    size_t sum = 0;
-    for (size_t i = 0; i < 100*1000; ++i) sum += v->get_double(0,i);
+    size_t SZ = 100*1000;
+    DataFrame* v = getKVStore()->getAndWait(main);
+
+    double sum = 0;
+    for (size_t i = 0; i < SZ; ++i) {
+      sum += v->get_double(0,i);
+    }
     p("The sum is  ").pln(sum);
-    DataFrame::fromScalar(&verify, &kv, sum);
+
+    Schema s("");
+    DataFrame d(s);
+    df3 = d.from_scalar(verify, getKVStore(), sum);
   }
 
   void summarizer() {
-    DataFrame* result = kv.getAndWait(verify);
-    DataFrame* expected = kv.getAndWait(check);
+    DataFrame* result = getKVStore()->getAndWait(verify);
+    DataFrame* expected = getKVStore()->getAndWait(check);
     pln(expected->get_double(0,0)==result->get_double(0,0) ? "SUCCESS":"FAILURE");
   }
+};
+
+/** A DemoThread wraps a Thread and contains a Demo.
+ *  author: armani.a@husky.neu.edu, horn.s@husky.neu.edu */
+class DemoThread : public Thread {
+public:
+
+  std::thread thread_;
+  Demo* d;
+  size_t threadId_;
+
+  DemoThread(size_t index, size_t cur_thread, KDFMap* kv) {
+    threadId_ = cur_thread;
+    d = new Demo(index, kv);
+  }
+
+  ~DemoThread() {
+    delete d;
+  }
+
 };

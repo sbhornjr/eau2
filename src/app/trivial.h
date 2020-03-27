@@ -11,7 +11,7 @@ public:
   Key* key_int;
   Key* key_double;
 
-  Trivial(size_t idx) : Application(idx) {
+  Trivial(size_t idx, KDFMap* kv) : Application(idx, kv) {
     String* s1 = new String("int-triv");
     String* s2 = new String("double-triv");
     key_int = new Key(s1, 0);
@@ -19,6 +19,11 @@ public:
     run_();
     delete s1;
     delete s2;
+  }
+
+  ~Trivial() {
+    delete key_int;
+    delete key_double;
   }
 
   void run_() {
@@ -43,11 +48,11 @@ public:
     Schema s("");
     DataFrame d(s);
 
-    DataFrame* df = d.from_array(key_int, &kv, SZ, vals);
+    DataFrame* df = d.from_array(key_int, getKVStore(), SZ, vals);
 
     assert(df->get_int(0,1) == 1);
 
-    DataFrame* df2 = kv.get(key_int);
+    DataFrame* df2 = getKVStore()->get(key_int);
     for (size_t i = 0; i < SZ; ++i) sum -= df2->get_int(0, i);
 
     assert(sum == 0);
@@ -69,11 +74,11 @@ public:
     Schema s("");
     DataFrame d(s);
 
-    DataFrame* df = d.from_array(key_double, &kv, SZ, vals);
+    DataFrame* df = d.from_array(key_double, getKVStore(), SZ, vals);
 
     assert(df->get_double(0,1) == 1);
 
-    DataFrame* df2 = kv.get(key_double);
+    DataFrame* df2 = getKVStore()->get(key_double);
     for (size_t i = 0; i < SZ; ++i) sum -= df2->get_double(0, i);
 
     assert(sum == 0);

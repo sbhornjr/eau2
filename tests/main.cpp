@@ -1,5 +1,5 @@
 #include "trivial.h"
-
+#include "demo.h"
 #include "dataframe.h"
 #include "row.h"
 #include "helper.h"
@@ -36,7 +36,9 @@ void milestone1(string filename) {
  * tests the trivial example.
  */
 void milestone2() {
-    Trivial t(0);
+    KDFMap* masterKV = new KDFMap();
+    Trivial t(0, masterKV);
+    delete masterKV;
 }
 
 
@@ -59,7 +61,7 @@ void test_key() {
     assert(k->getName()->equals(tester2));
     assert(k->getHomeNode() == 100);
 
-    cout << "Checking that hashing works for key values." << endl;
+    cout << "Checking that hashing works for key values.\n\n";
     Key* k2 = new Key(tester2, 0);
     assert(k->hash() != k2->hash());
 
@@ -73,9 +75,11 @@ void test_key() {
   * runs the example code given with a distributed kv store
   */
 void milestone3() {
-    //Demo d1(0);
-    //Demo d2(1);
-    //Demo d3(2);
+    KDFMap* masterKV = new KDFMap();
+    DemoThread d1(0, 100, masterKV);
+    DemoThread d2(1, 200, masterKV);
+    DemoThread d3(2, 300, masterKV);
+    delete masterKV;
 }
 
 
@@ -85,21 +89,21 @@ int main(int argc, const char** argv) {
         exit(1);
     }
 
-    cout << "running milestone 1 tests:" << endl << endl;
+    cout << "\033[33mRUNNING MILESTONE 1 TESTS:\033[0m" << endl << endl;
     milestone1(argv[1]);
-    cout << "milestone 1 tests successful." << endl << endl;
+    cout << "\033[32mMilestone 1 tests successful.\033[0m" << endl << endl;
 
-    cout << "running milestone 2 tests:" << endl << endl;
+    cout << "\033[33mRUNNING MILESTONE 2 TESTS:\033[0m" << endl << endl;
     milestone2();
-    cout << "milestone 2 tests successful." << endl << endl;
+    cout << "\033[32mMilestone 2 tests successful.\033[0m" << endl << endl;
 
-    cout << "running milestone 3 tests:" << endl << endl;
+    cout << "\033[33mRUNNING MILESTONE 3 TESTS:\033[0m" << endl << endl;
     milestone3();
-    cout << "WARNING!!! MILESTONE 3 is COMMENTED OUT!" << endl << endl;
+    cout << "\033[32mMilestone 3 tests successful.\033[0m" << endl << endl;
 
-    cout << "running tests on key object:" << endl << endl;
+    cout << "\033[33mRUNNING KEY TESTS:\033[0m" << endl << endl;
     test_key();
-    cout << "key tests successful." << endl << endl;
+    cout << "\033[32mKey tests successful.\033[0m" << endl << endl;
 
 
     return 0;

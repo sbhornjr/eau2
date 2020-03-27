@@ -1139,7 +1139,7 @@ public:
     void delete_all() {
         for (size_t i = 0; i < num_arr_; ++i) {
             for (size_t j = 0; j < STRING_ARR_SIZE && (i * STRING_ARR_SIZE) + j < size_; ++j) {
-                delete arr_[i][j];
+                //delete arr_[i][j];
             }
             delete[] arr_[i];
         }
