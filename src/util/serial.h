@@ -1,4 +1,4 @@
-ser_dbl// lang::CwC
+// lang::CwC
 
 #pragma once
 #include <stdlib.h>
@@ -7,7 +7,10 @@ ser_dbl// lang::CwC
 #include "object.h"
 #include "string.h"
 #include "array.h"
-#include "network/message.h"
+#include "message.h"
+#include "dataframe.h"
+
+using namespace std;
 
 class Serializer: public Object {
 public:
@@ -152,8 +155,9 @@ public:
             const char* ser_str = serialize(sarr->get(i));
             barr->push_string(ser_str);
             barr->push_string(", ");
-            delete[] ser_str;
+            delete ser_str;
         }
+
 
         // add last element of array
         const char* ser_str = serialize(sarr->get(sarr->size() - 1));
@@ -203,7 +207,6 @@ public:
                     String* new_str = new String(string);
                     sarr->push_back(new_str);
                     string = strtok(NULL, "\", ");
-                    delete new_str;
                 }
                 // find the end of the line
                 for (size_t j = i; str[j] != '\n' && str[j] != 0; ++j) {
@@ -306,7 +309,7 @@ public:
         char buff[50];
         memset(buff, 0, 50);
         sprintf(buff, "knd: %c\nsnd: %zu\ntgt: %zu\nidx: %zu",
-                kind, msg->sender_, msg->target_, msg->id_);
+                (char)kind, msg->sender_, msg->target_, msg->id_);
         barr->push_string(buff);
 
         // call the correct sub-serializer
@@ -567,6 +570,7 @@ public:
             barr->push_back(' ');
             delete[] ser_prt;
         }
+        
         // add last port
         const char* ser_prt = serialize(dir->ports_[dir->clients_ - 1]);
         barr->push_string(ser_prt);
@@ -640,7 +644,6 @@ public:
                     sarr->push_back(n_ip);
                     i += strlen(next_ip) + 4;
                     next_ip = strtok(NULL, "\", \n");
-                    delete n_ip;
                 }
                 delete[] ar_line;
             }
@@ -654,5 +657,39 @@ public:
         delete sarr;
 
         return dir;
+    }
+
+    const char* serialize(DataFrame* df) {
+        ByteArray* barr = new ByteArray();
+
+        Schema scm = df->get_schema();
+        const char* ser_schema = serialize(scm);
+        barr->push_string("scm:\n");
+        barr->push_string(ser_schema);
+        delete ser_schema;
+
+        barr->push_string("\ncol:\n");
+        const char* str = barr->as_bytes();
+        delete barr;
+        return str;
+    }
+
+    const char* serialize(Schema s) {
+        ByteArray* barr = new ByteArray();
+
+        String* types = s.types_;
+        const char* ser_types = serialize(types);
+
+        char buff[50];
+        memset(buff, 0, 50);
+        sprintf(buff, "\ttyp: %s\n\tcol: %zu\n\trow: %zu",
+                ser_types, s.width(), s.length());
+        barr->push_string(buff);
+
+        delete ser_types;
+
+        const char* str = barr->as_bytes();
+        delete barr;
+        return str;
     }
 };

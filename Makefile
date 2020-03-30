@@ -5,7 +5,6 @@ build:
 	- rm -rf ./tests/test-data
 	mkdir ./tests/test-data
 	cd ./src/dataframe; cp *.h ../../tests/test-data
-	cd ./src/sorer; cp *.h ../../tests/test-data
 	cd ./src/network; cp *.h ../../tests/test-data
 	cd ./src/util; cp *.h ../../tests/test-data
 	cd ./src/app; cp *.h ../../tests/test-data
@@ -21,7 +20,6 @@ test:
 	- rm -rf ./tests/test-data
 	mkdir ./tests/test-data
 	cd ./src/dataframe; cp *.h ../../tests/test-data
-	cd ./src/sorer; cp *.h ../../tests/test-data
 	cd ./src/network; cp *.h ../../tests/test-data
 	cd ./src/util; cp *.h ../../tests/test-data
 	cd ./src/app; cp *.h ../../tests/test-data
@@ -37,7 +35,6 @@ valgr:
 	- rm -rf ./tests/test-data
 	mkdir ./tests/test-data
 	cd ./src/dataframe; cp *.h ../../tests/test-data
-	cd ./src/sorer; cp *.h ../../tests/test-data
 	cd ./src/network; cp *.h ../../tests/test-data
 	cd ./src/util; cp *.h ../../tests/test-data
 	cd ./src/app; cp *.h ../../tests/test-data

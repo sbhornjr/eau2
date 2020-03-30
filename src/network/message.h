@@ -85,7 +85,6 @@ public:
            ports_[i] = ports[i];
            String* adr = new String(addresses->get(i)->c_str());
            addresses_->push_back(adr);
-           delete adr;
        }
    }
 

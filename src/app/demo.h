@@ -5,6 +5,7 @@
 #include "string.h"
 #include "array.h"
 #include "key.h"
+#include "thread.h"
 
 class Demo : public Application {
 public:
@@ -73,7 +74,7 @@ public:
   void summarizer() {
     DataFrame* result = getKVStore()->getAndWait(verify);
     DataFrame* expected = getKVStore()->getAndWait(check);
-    pln(expected->get_double(0,0)==result->get_double(0,0) ? "SUCCESS":"FAILURE");
+    pln(expected->get_double(0,0)==result->get_double(0,0) ? "SUCCESS\n":"FAILURE\n");
     delete result;
     delete expected;
   }
