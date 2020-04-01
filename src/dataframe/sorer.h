@@ -19,9 +19,10 @@ public:
     size_t from, len;
     Schema* schema;
     vector<string> goodrows;
+    KChunkMap* kc;
 
-    Sorer(string filename)
-    : filename(filename) {
+    Sorer(string filename, KChunkMap* kc_)
+    : filename(filename), kc(kc_) {
         /** set default len and from values */
         ifstream file_len (filename, ios::binary);
         streampos fsize = file_len.tellg();
@@ -34,8 +35,8 @@ public:
         find_bool_int_true_schema();
     }
 
-    Sorer(string filename, size_t from, int len)
-    : filename(filename), from(from), len(len) {
+    Sorer(string filename, size_t from, int len, KChunkMap* kc_)
+    : filename(filename), from(from), len(len), kc(kc_) {
         if (len == -1) {
             ifstream file_len (filename, ios::binary);
             streampos fsize = file_len.tellg();
@@ -279,7 +280,7 @@ public:
      * authors: horn.s@husky.neu.edu, armani.a@husky.neu.edu
      */
     DataFrame* generate_dataframe() {
-        DataFrame* df = new DataFrame(*schema);
+        DataFrame* df = new DataFrame(*schema, kc);
 
         string line;
         size_t bytes_read = 0;
@@ -452,13 +453,6 @@ public:
                 } // End creation of validated row
                 if (isValidated) {
                     df->add_row(validated);
-                } else {
-                    for (size_t i = 0; i < validated.width(); ++i) {
-                        if (validated.col_type(i) == 'S') {
-                            StringColumn* sc = validated.columns_[i]->as_string();
-                            if (sc->size() >= 1) delete sc->get(0);
-                        }
-                    }
                 }
             }
         } else {

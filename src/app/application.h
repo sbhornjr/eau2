@@ -13,11 +13,13 @@
 class Application : public Object {
 public:
     KDFMap* kv_;
+    KChunkMap* kc_;
     size_t idx;
 
-    Application(size_t i, KDFMap* kv) {
-        idx = i;
-        kv_ = kv;
+    Application(size_t i, KDFMap* kv, KChunkMap* kc) {
+      idx = i;
+      kv_ = kv;
+      kc_ = kc;
     }
 
     virtual void run_() {}

@@ -79,9 +79,9 @@ public:
 class Row : public Object {
 public:
 
-  // the values of this array as a list of columns.
+  // the values of this array as a list of columns as arrays.
   // each column is of size 1, idx 0 contains the row's val at that col.
-  Column** columns_;
+  Array** columns_;
 
   Schema* schema_;    // the schema this row conforms to
   size_t size_;       // the number of fields in the row
@@ -93,20 +93,20 @@ public:
     schema_ = new Schema(scm);
     size_ = schema_->width();
     curIdx_ = 0;
-    columns_ = new Column*[schema_->width()];
+    columns_ = new Array*[schema_->width()];
 
     // for loop to populate columns_ with columns of correct types
     for (size_t i = 0; i < schema_->width(); ++i) {
       char type = schema_->col_type(i);
-      Column* c;
+      Array* c;
       if (type == 'I') {
-        c = new IntColumn();
+        c = new IntArray();
       } else if (type == 'B') {
-        c = new BoolColumn();
+        c = new BoolArray();
       } else if (type == 'D') {
-        c = new DoubleColumn();
+        c = new DoubleArray();
       } else if (type == 'S') {
-        c = new StringColumn();
+        c = new StringArray();
       } else {
         assert(false);
       }
@@ -131,7 +131,7 @@ public:
     */
   void set(size_t col, int val) {
     assert(schema_->col_type(col) == 'I');
-    IntColumn* c = dynamic_cast<IntColumn*>(columns_[col]);
+    IntArray* c = dynamic_cast<IntArray*>(columns_[col]);
     if (c->size() == 0) {
       c->push_back(val);
     } else {
@@ -141,7 +141,7 @@ public:
 
   void set(size_t col, double val) {
     assert(schema_->col_type(col) == 'D');
-    DoubleColumn* c = dynamic_cast<DoubleColumn*>(columns_[col]);
+    DoubleArray* c = dynamic_cast<DoubleArray*>(columns_[col]);
     if (c->size() == 0) {
       c->push_back(val);
     } else {
@@ -151,7 +151,7 @@ public:
 
   void set(size_t col, bool val) {
     assert(schema_->col_type(col) == 'B');
-    BoolColumn* c = dynamic_cast<BoolColumn*>(columns_[col]);
+    BoolArray* c = dynamic_cast<BoolArray*>(columns_[col]);
     if (c->size() == 0) {
       c->push_back(val);
     } else {
@@ -161,11 +161,11 @@ public:
   /** Acquire ownership of the string. */
   void set(size_t col, String* val) {
     assert(schema_->col_type(col) == 'S');
-    StringColumn* c = dynamic_cast<StringColumn*>(columns_[col]);
+    StringArray* c = dynamic_cast<StringArray*>(columns_[col]);
     if (c->size() == 0) {
       c->push_back(val);
     } else {
-      c->set(0, val, 0);
+      c->set(0, val);
     }
   }
 
@@ -186,22 +186,22 @@ public:
     */
   int get_int(size_t col){
     assert(schema_->col_type(col) == 'I');
-    IntColumn* ic = columns_[col]->as_int();
+    IntArray* ic = columns_[col]->as_int();
     return ic->get(0);
   }
   bool get_bool(size_t col){
     assert(schema_->col_type(col) == 'B');
-    BoolColumn* bc = columns_[col]->as_bool();
+    BoolArray* bc = columns_[col]->as_bool();
     return bc->get(0);
   }
   double get_double(size_t col){
     assert(schema_->col_type(col) == 'D');
-    DoubleColumn* dc = columns_[col]->as_double();
+    DoubleArray* dc = columns_[col]->as_double();
     return dc->get(0);
   }
   String* get_string(size_t col){
     assert(schema_->col_type(col) == 'S');
-    StringColumn* sc = columns_[col]->as_string();
+    StringArray* sc = columns_[col]->as_string();
     return sc->get(0);
   }
 
@@ -225,16 +225,16 @@ public:
     for (size_t i = 0; i < size_; ++i) {
       char type = schema_->col_type(i);
       if (type == 'I') {
-        IntColumn* ic = columns_[i]->as_int();
+        IntArray* ic = columns_[i]->as_int();
         f.accept(ic->get(0));
       } else if (type == 'B') {
-        BoolColumn* bc = columns_[i]->as_bool();
+        BoolArray* bc = columns_[i]->as_bool();
         f.accept(bc->get(0));
       } else if (type == 'D') {
-        DoubleColumn* dc = columns_[i]->as_double();
+        DoubleArray* dc = columns_[i]->as_double();
         f.accept(dc->get(0));
       } else if (type == 'S') {
-        StringColumn* sc = columns_[i]->as_string();
+        StringArray* sc = columns_[i]->as_string();
         f.accept(sc->get(0));
       } else {
         assert(false);

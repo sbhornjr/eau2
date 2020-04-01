@@ -11,7 +11,7 @@ public:
   Key* key_int;
   Key* key_double;
 
-  Trivial(size_t idx, KDFMap* kv) : Application(idx, kv) {
+  Trivial(size_t idx, KDFMap* kv, KChunkMap* kc) : Application(idx, kv, kc) {
     String* s1 = new String("int-triv");
     String* s2 = new String("double-triv");
     key_int = new Key(s1, 0);
@@ -46,9 +46,9 @@ public:
     }
 
     Schema s("");
-    DataFrame d(s);
+    DataFrame d(s, kc_);
 
-    DataFrame* df = d.from_array(key_int, getKVStore(), SZ, vals);
+    DataFrame* df = d.from_array(key_int, getKVStore(), kc_, SZ, vals);
 
     assert(df->get_int(0,1) == 1);
 
@@ -72,9 +72,9 @@ public:
     }
 
     Schema s("");
-    DataFrame d(s);
+    DataFrame d(s, kc_);
 
-    DataFrame* df = d.from_array(key_double, getKVStore(), SZ, vals);
+    DataFrame* df = d.from_array(key_double, getKVStore(), kc_, SZ, vals);
 
     assert(df->get_double(0,1) == 1);
 

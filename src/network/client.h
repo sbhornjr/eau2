@@ -27,46 +27,17 @@ class Client : public Socket {
 public:
 
     String* server_ip;          // ip of server
+    size_t node_id;             // id of this node
     int servfd;                 // socket to server
-    int seconds;                // amount of time between sending random msgs
     bool confirmed;             // am i registered
-
-    // constructor that takes just the ip address of this client
-    Client(char* ip)
-    : Socket(ip),
-      server_ip(new String("127.0.0.1")),
-      seconds(-1),
-      confirmed(false) { setup(); }
-
-    // constructor that takes the ip address and the amount of seconds
-    // between sending random messages
-    Client(char* ip, int seconds)
-    : Socket(ip),
-      server_ip(new String("127.0.0.1")),
-      seconds(seconds),
-      confirmed(false) { setup(); }
-
-    // constructor that takes the ip address of this client and the port
-    Client(char* ip, char* port)
-    : Socket(ip, port),
-      server_ip(new String("127.0.0.1")),
-      seconds(-1),
-      confirmed(false) { setup(); }
-
-    // constructor that takes the ip address, the port, and
-    // the amount of seconds between sending random messages
-    Client(char* ip, char* port, int seconds)
-    : Socket(ip, port),
-      server_ip(new String("127.0.0.1")),
-      seconds(seconds),
-      confirmed(false) { setup(); }
+    
 
     // constructor that takes the ip address, the port, the serverip, and
     // the amount of seconds between sending random messages
-    Client(char* ip, char* port, String* serverip, int seconds)
+    Client(size_t id, char* ip, char* port, String* serverip)
     : Socket(ip, port),
       server_ip(serverip),
-      seconds(seconds),
+      node_id(id),
       confirmed(false) { setup(); }
 
     // sets up the client with a socket for sending to server
@@ -158,7 +129,7 @@ public:
       size_t sz = atoi(port);       // get the port as a size_t
       my_addr.sin_port = sz;
 
-      Register* reg = new Register(1, ++id, my_addr, sz);
+      Register* reg = new Register(node_id, (size_t)1, ++id, my_addr, sz);
       const char* ser_reg = s->serialize(reg);
 
       // send registration message to server
@@ -343,17 +314,6 @@ public:
             }
           }
         }
-
-        // SEND -
-        // send random messages if we have been registered
-        if (seconds >= 0 && confirmed) {
-          // time to send a new random message
-          if (registered > 0 &&
-              (double)(time(NULL) - since_last_msg_sent) >= (double)seconds) {
-            send_random("Hello!");
-            since_last_msg_sent = time(NULL);
-          }
-        }
       }
     }
 
@@ -442,6 +402,10 @@ public:
     Text* createTextMessage(const char* contents, int receiver) {
       Text* text = new Text(receiver, ++id, contents, ip->c_str());
       return text;
+    }
+
+    void put(Key* key, const char* value) {
+
     }
 
     // teardown - close sockets

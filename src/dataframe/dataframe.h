@@ -24,15 +24,17 @@ class DataFrame : public Object {
 
   Column** cols_;   // column array representing the values of the DF
   Schema* schema_;  // the schema this DF conforms to
+  KChunkMap* kv_;   // chunk map for columns to use
 
   /** Create a data frame with the same columns as the give df but no rows */
-  DataFrame(DataFrame& df): DataFrame(*df.schema_) {}
+  DataFrame(DataFrame& df): DataFrame(*df.schema_, df.kv_) {}
 
   /** Create a data frame from a schema and columns. Results are undefined if
     * the columns do not match the schema. */
-  DataFrame(Schema& schema) {
+  DataFrame(Schema& schema, KChunkMap* kc) {
     schema_ = new Schema(schema);
     cols_ = new Column*[schema_->width()];
+    kv_ = kc;
 
     // populates cols_ with empty columns
     for (size_t i = 0; i < schema_->width(); ++i) {
@@ -54,9 +56,9 @@ class DataFrame : public Object {
   /**
    *  create and return a df of 1 col with the values in from of size sz,
    *  and make it the value of the given key in the kvstore */
-  DataFrame* from_array(Key* key, KDFMap* kv, size_t sz, Array* from) {
+  DataFrame* from_array(Key* key, KDFMap* kv, KChunkMap* kc, size_t sz, Array* from) {
     Schema scm("");
-    DataFrame* df = new DataFrame(scm);
+    DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_(from->get_type());
     if (from->as_int() != nullptr) {
       IntArray* ia = from->as_int();
@@ -106,9 +108,9 @@ class DataFrame : public Object {
    *  Create and return a df of 1 value (scalar). Integer Version.
    *  This would be useful for storing a value such as a sum.
    *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KDFMap* kv, int val) {
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, int val) {
     Schema scm("");
-    DataFrame* df = new DataFrame(scm);
+    DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_('I');
     IntColumn* ic = c->as_int();
     ic->push_back(val);
@@ -128,9 +130,9 @@ class DataFrame : public Object {
    *  Create and return a df of 1 value (scalar). Double Version.
    *  This would be useful for storing a value such as a sum.
    *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KDFMap* kv, double val) {
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, double val) {
     Schema scm("");
-    DataFrame* df = new DataFrame(scm);
+    DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_('D');
     DoubleColumn* dc = c->as_double();
     dc->push_back(val);
@@ -149,9 +151,9 @@ class DataFrame : public Object {
   /**
    *  Create and return a df of 1 value (scalar). Boolean Version.
    *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KDFMap* kv, bool val) {
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, bool val) {
     Schema scm("");
-    DataFrame* df = new DataFrame(scm);
+    DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_('B');
     BoolColumn* bc = c->as_bool();
     bc->push_back(val);
@@ -171,9 +173,9 @@ class DataFrame : public Object {
    *  Create and return a df of 1 value (scalar). String Version.
    *  Possible uses are a concatenated String.
    *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KDFMap* kv, String* val) {
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, String* val) {
     Schema scm("");
-    DataFrame* df = new DataFrame(scm);
+    DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_('S');
     StringColumn* sc = c->as_string();
     sc->push_back(val);
@@ -242,13 +244,13 @@ class DataFrame : public Object {
   Column* get_new_col_(char type) {
       Column* c;
       if (type == 'I') {
-        c = new IntColumn();
+        c = new IntColumn(kv_);
       } else if (type == 'B') {
-        c = new BoolColumn();
+        c = new BoolColumn(kv_);
       } else if (type == 'D') {
-        c = new DoubleColumn();
+        c = new DoubleColumn(kv_);
       } else if (type == 'S') {
-        c = new StringColumn();
+        c = new StringColumn(kv_);
       } else {
         std::cout << type << std::endl;
         assert(false);
@@ -330,31 +332,6 @@ class DataFrame : public Object {
     }
   }
 
-  /**
-   * Use the row's internal idx to change the DF's values at that row
-   * to this row's value. */
-  void update_row(Row& row) {
-    size_t idx = row.get_idx();
-
-    // for loop to update col values
-    for (size_t i = 0; i < schema_->width(); ++i) {
-      char typ = schema_->col_type(i);
-      if (typ == 'I') {
-        IntColumn* ic = cols_[i]->as_int();
-        ic->set(idx, row.get_int(i));
-      } else if (typ == 'B') {
-        BoolColumn* bc = cols_[i]->as_bool();
-        bc->set(idx, row.get_bool(i));
-      } else if (typ == 'D') {
-        DoubleColumn* dc = cols_[i]->as_double();
-        dc->set(idx, row.get_double(i));
-      } else {
-        StringColumn* sc = cols_[i]->as_string();
-        sc->set(idx, row.get_string(i));
-      }
-    }
-  }
-
   /** The number of rows in the dataframe. */
   size_t nrows() {
     return schema_->length();
@@ -370,7 +347,7 @@ class DataFrame : public Object {
     Row* row = new Row(*schema_);
     for (size_t i = 0; i < schema_->length(); ++i) {
       fill_row(i, *row);
-      if (r.accept(*row)) update_row(*row);
+      r.accept(*row);
     }
     delete row;
   }

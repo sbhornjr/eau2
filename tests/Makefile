@@ -1,8 +1,8 @@
 build:
-	g++ -g -Wall -std=c++11 -pthread main.cpp -o eau2
+	g++ -g -Wall -std=c++11 -pthread demo.cpp -o eau2 
 
 test:
-	./eau2 data.sor
+	./eau2 0 1
 
 valgr:
-	valgrind --leak-check=full --show-leak-kinds=all ./eau2 data.sor
+	valgrind --leak-check=full --show-leak-kinds=all ./eau2 0 1

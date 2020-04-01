@@ -3,10 +3,10 @@
 #pragma once
 #include "string.h"
 #include "key.h"
-#include "column.h"
-#include "dataframe.h"
 #include <math.h>
 #include <stdarg.h>
+
+using namespace std;
 
 /** @designers: vitekj@me.com, course staff */
 
@@ -17,8 +17,11 @@ class DoubleArray;
 class StringArray;
 class KeyArray;
 class ByteArray;
-class DFArray;
-class DataFrame;
+class Chunk;
+
+size_t ARR_SIZE = 256 * 100;
+size_t STRING_ARR_SIZE = 128 * 100;
+size_t BOOL_ARR_SIZE = 1024 * 100;
 
 /**************************************************************************
  * Array ::
@@ -49,9 +52,6 @@ public:
 
     // returns this Array as a ByteArray*, or nullptr if not a ByteArray*
     virtual ByteArray* as_char() {return nullptr;}
-
-    // returns this Array as a ByteArray*, or nullptr if not a ByteArray*
-    virtual DFArray* as_df() {return nullptr;}
 
     /** Type appropriate push_back methods. Calling the wrong method is
      * undefined behavior. **/
@@ -929,143 +929,6 @@ public:
 };
 
 /*************************************************************************
- * DFArray::
- * Holds DF pointers. The strings are external.  Nullptr is a valid
- * value.
- * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
- */
-class DFArray : public Array {
-public:
-
-    DataFrame*** arr_;     // internal array of DataFrame* arrays
-    size_t num_arr_;    // number of DataFrame* arrays there are in arr_
-    size_t size_;       // number of DataFrame*s total there are in arr_
-
-    // default construtor - initialize as an empty StringArray
-    DFArray() {
-        set_type_('D');
-        size_ = 0;
-        num_arr_ = 0;
-        arr_ = new DataFrame**[0];
-    }
-
-    // destructor - delete arr_, its sub-arrays, and their dfs
-    ~DFArray() {
-        for (size_t i = 0; i < num_arr_; ++i) {
-            delete[] arr_[i];
-        }
-        delete[] arr_;
-    }
-
-    /** returns true if this is equal to that */
-    bool equals(Object* that) {
-        if (that == this) return true;
-        DFArray* x = dynamic_cast<DFArray*>(that);
-        if (x == nullptr) return false;
-        if (size_ != x->size_) return false;
-        for (size_t i = 0; i < size_; ++i) {
-            if (get(i) != x->get(i)) return false;
-        }
-        return true;
-    }
-
-    /** gets the hash code value */
-    size_t hash() {
-        size_t hash = 0;
-        for (size_t i = 0; i < size_; ++i) {
-            hash += 17;
-        }
-        return hash;
-    }
-
-    /**
-     * turns this Array* into an DFArray* (assuming it is one)
-     * @returns this Array as an DFArray*
-     */
-    DFArray* as_df() {
-        return this;
-    }
-
-    /** Returns the df at idx; undefined on invalid idx.
-     * @param idx: index of DF* to get
-     * @returns the DF* at that index
-     */
-    DataFrame* get(size_t idx) {
-        assert(idx < size_);
-        return arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
-    }
-
-    /**
-     * Acquire ownership for the df.
-     * replaces the DF* at given index with given DF*
-     * @param idx: the index at which to place this value
-     * @param val: val to put at the index
-     */
-    void set(size_t idx, DataFrame* val) {
-        assert(idx < size_);
-        arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = val;
-    }
-
-    /**
-     * push the given val to the end of the Array
-     * @param val: DF* to push back
-     */
-    void push_back(DataFrame* val) {
-        // the last DF** in arr_ is full
-        // copy DF**s into a new DF*** - copies pointers but not payload
-        if (size_ % STRING_ARR_SIZE == 0) {
-            // increment size values
-            ++size_;
-            ++num_arr_;
-
-            // create new DF** and initialize with val at first idx
-            DataFrame** dfs = new DataFrame*[STRING_ARR_SIZE];
-            dfs[0] = val;
-
-            // set up a temp DF***, overwrite arr_ with new DF***
-            DataFrame*** tmp = arr_;
-            arr_ = new DataFrame**[num_arr_];
-
-            // for loop to copy values from temp into arr_
-            for (size_t i = 0; i < num_arr_ - 1; ++i) {
-                arr_[i] = tmp[i];
-            }
-
-            // add new DF** into arr_ and delete the temp
-            arr_[num_arr_ - 1] = dfs;
-            delete[] tmp;
-        // we have room in the last DF** of arr_ - add the val
-        } else {
-            arr_[size_ / STRING_ARR_SIZE][size_ % STRING_ARR_SIZE] = val;
-            ++size_;
-        }
-    }
-
-    /** remove DF at given idx */
-    void remove(size_t idx) {
-        assert(idx < size_);
-        if (idx == size_ - 1) {
-            arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = NULL;
-        } else {
-            for (size_t i = idx; i < size_; ++i) {
-                set(i, arr_[(i + 1) / STRING_ARR_SIZE][(i + 1) % STRING_ARR_SIZE]);
-            }
-        }
-        --size_;
-        if (size_ % STRING_ARR_SIZE == 0) --num_arr_;
-    }
-
-    /**
-     * get the amount of Strings in the Array
-     * @returns the amount of Strings in the Array
-     */
-    size_t size() {
-        return size_;
-    }
-};
-
-
-/*************************************************************************
  * KeyArray::
  * Holds key pointers. The keys are external (not owned).  Nullptr is a valid
  * value.
@@ -1254,6 +1117,142 @@ public:
     /**
      * get the amount of Keys in the Array
      * @returns the amount of Keys in the Array
+     */
+    size_t size() {
+        return size_;
+    }
+};
+
+/*************************************************************************
+ * ChunkArray::
+ * Holds Chunk pointers. The strings are external.  Nullptr is a valid
+ * value.
+ * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
+ */
+class ChunkArray : public Array {
+public:
+
+    Chunk*** arr_;     // internal array of Chunk* arrays
+    size_t num_arr_;    // number of Chunk* arrays there are in arr_
+    size_t size_;       // number of Chunk*s total there are in arr_
+
+    // default construtor - initialize as an empty StringArray
+    ChunkArray() {
+        set_type_('D');
+        size_ = 0;
+        num_arr_ = 0;
+        arr_ = new Chunk**[0];
+    }
+
+    // destructor - delete arr_, its sub-arrays, and their chunks
+    ~ChunkArray() {
+        for (size_t i = 0; i < num_arr_; ++i) {
+            delete[] arr_[i];
+        }
+        delete[] arr_;
+    }
+
+    /** returns true if this is equal to that */
+    bool equals(Object* that) {
+        if (that == this) return true;
+        ChunkArray* x = dynamic_cast<ChunkArray*>(that);
+        if (x == nullptr) return false;
+        if (size_ != x->size_) return false;
+        for (size_t i = 0; i < size_; ++i) {
+            if (get(i) != x->get(i)) return false;
+        }
+        return true;
+    }
+
+    /** gets the hash code value */
+    size_t hash() {
+        size_t hash = 0;
+        for (size_t i = 0; i < size_; ++i) {
+            hash += 17;
+        }
+        return hash;
+    }
+
+    /**
+     * turns this Array* into an ChunkArray* (assuming it is one)
+     * @returns this Array as an ChunkArray*
+     */
+    ChunkArray* as_chunk() {
+        return this;
+    }
+
+    /** Returns the chunk at idx; undefined on invalid idx.
+     * @param idx: index of Chunk* to get
+     * @returns the Chunk* at that index
+     */
+    Chunk* get(size_t idx) {
+        assert(idx < size_);
+        return arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
+    }
+
+    /**
+     * Acquire ownership for the df.
+     * replaces the Chunk* at given index with given DF*
+     * @param idx: the index at which to place this value
+     * @param val: val to put at the index
+     */
+    void set(size_t idx, Chunk* val) {
+        assert(idx < size_);
+        arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = val;
+    }
+
+    /**
+     * push the given val to the end of the Array
+     * @param val: Chunk* to push back
+     */
+    void push_back(Chunk* val) {
+        // the last DF** in arr_ is full
+        // copy DF**s into a new DF*** - copies pointers but not payload
+        if (size_ % STRING_ARR_SIZE == 0) {
+            // increment size values
+            ++size_;
+            ++num_arr_;
+
+            // create new DF** and initialize with val at first idx
+            Chunk** chunks = new Chunk*[STRING_ARR_SIZE];
+            chunks[0] = val;
+
+            // set up a temp DF***, overwrite arr_ with new DF***
+            Chunk*** tmp = arr_;
+            arr_ = new Chunk**[num_arr_];
+
+            // for loop to copy values from temp into arr_
+            for (size_t i = 0; i < num_arr_ - 1; ++i) {
+                arr_[i] = tmp[i];
+            }
+
+            // add new DF** into arr_ and delete the temp
+            arr_[num_arr_ - 1] = chunks;
+            delete[] tmp;
+        // we have room in the last DF** of arr_ - add the val
+        } else {
+            arr_[size_ / STRING_ARR_SIZE][size_ % STRING_ARR_SIZE] = val;
+            ++size_;
+        }
+    }
+
+    /** remove chunk at given idx */
+    void remove(size_t idx) {
+        assert(idx < size_);
+        if (idx == size_ - 1) {
+            arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = NULL;
+        } else {
+            for (size_t i = idx; i < size_; ++i) {
+                set(i, arr_[(i + 1) / STRING_ARR_SIZE][(i + 1) % STRING_ARR_SIZE]);
+            }
+        }
+        --size_;
+        if (size_ % STRING_ARR_SIZE == 0) --num_arr_;
+    }
+
+    /**
+     * get the amount of Strings in the Array
+     * @returns the amount of Strings in the Array
      */
     size_t size() {
         return size_;

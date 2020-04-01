@@ -31,6 +31,11 @@ void milestone1(string filename) {
     ReverseRower rr;
     df->map(rr);
 
+    //Serializer serial;
+    //const char* serial_df = serial.serialize(df);
+    //cout << serial_df << endl;
+    //DataFrame* df2 = serial.get_dataframe(serial_df);
+
     delete df;
 }
 

@@ -21,7 +21,7 @@ public:
   Key* verify = new Key(v,0);
   Key* check = new Key(c,0);
 
-  Demo(size_t idx, KDFMap* kv): Application(idx, kv) {
+  Demo(size_t idx, KDFMap* kv, KChunkMap* kc): Application(idx, kv, kc) {
     run_();
   }
 
@@ -52,8 +52,8 @@ public:
       sum += vals->get(i);
     }
 
-    df = df->from_array(main, getKVStore(), SZ, vals);
-    df2 = df2->from_scalar(check, getKVStore(), sum);
+    df = df->from_array(main, getKVStore(), kc_, SZ, vals);
+    df2 = df2->from_scalar(check, getKVStore(), kc_, sum);
     delete vals;
   }
 
@@ -68,7 +68,7 @@ public:
     p("The sum is  ").pln(sum);
     delete v;
 
-    df3 = df3->from_scalar(verify, getKVStore(), sum);
+    df3 = df3->from_scalar(verify, getKVStore(), kc_, sum);
   }
 
   void summarizer() {
@@ -89,9 +89,9 @@ public:
   Demo* d;
   size_t threadId_;
 
-  DemoThread(size_t index, size_t cur_thread, KDFMap* kv) {
+  DemoThread(size_t index, size_t cur_thread, KDFMap* kv, KChunkMap* kc) {
     threadId_ = cur_thread;
-    d = new Demo(index, kv);
+    d = new Demo(index, kv, kc);
   }
 
   ~DemoThread() {
