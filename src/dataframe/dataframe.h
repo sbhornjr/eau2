@@ -26,7 +26,7 @@ class DataFrame : public Object {
   Schema* schema_;  // the schema this DF conforms to
   KChunkMap* kv_;   // chunk map for columns to use
 
-  /** Create a data frame with the same columns as the give df but no rows */
+  /** Create a data frame with the same columns as the given df but no rows */
   DataFrame(DataFrame& df): DataFrame(*df.schema_, df.kv_) {}
 
   /** Create a data frame from a schema and columns. Results are undefined if
@@ -53,10 +53,64 @@ class DataFrame : public Object {
     delete schema_;
   }
 
+  const char* serialize(DataFrame* df) {
+      ByteArray* barr = new ByteArray();
+
+      barr->push_string("cls:\n");
+
+      Schema scm = df->get_schema();
+      ColumnSerializer* s = new ColumnSerializer;
+
+      for (size_t i = 0; i < scm.width(); ++i) {
+          if (i != 0 && i != scm.width() - 1) barr->push_back('\n');
+          barr->push_string("\tcol:\n");
+          const char* ser_col = s->serialize(df->cols_[i]);
+          barr->push_string(ser_col);
+          delete ser_col;
+      }
+
+      const char* str = barr->as_bytes();
+      delete barr;
+      delete s;
+
+      return str;
+  }
+
+  /** TODO!
+    */
+  DataFrame* get_dataframe(const char* str) {
+      size_t new_line_loc, i;
+      const char* type;
+
+      Schema* scm;
+
+      // go through lines of str
+      i = 0;
+      while (i < strlen(str)) {
+          // get the type of this line
+          char type_buff[4];
+          memcpy(type_buff, &str[i], 3);
+          type_buff[3] = 0;
+          // this is the columns line
+          if (strcmp(type_buff, "cls") == 0) {
+              Schema scm;
+              DataFrame* df = new DataFrame(scm);
+              i += 6;
+              while (i < strlen(str)) {
+                  i += 7;
+                  Column* col = get_column(&str[i], &i);
+                  df->add_column(col);
+              }
+          }
+          else break;
+      }
+      return nullptr;
+  }
+
   /**
    *  create and return a df of 1 col with the values in from of size sz,
    *  and make it the value of the given key in the kvstore */
-  DataFrame* from_array(Key* key, KDFMap* kv, KChunkMap* kc, size_t sz, Array* from) {
+  DataFrame* from_array(Key* key, KSMap* kv, KChunkMap* kc, size_t sz, Array* from) {
     Schema scm("");
     DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_(from->get_type());
@@ -100,15 +154,15 @@ class DataFrame : public Object {
     delete[] df->cols_;
     df->cols_ = cols;
 
-    kv->put(key, df);
+    kv->put(key, serialize(df));
     return df;
   }
 
   /**
    *  Create and return a df of 1 value (scalar). Integer Version.
    *  This would be useful for storing a value such as a sum.
-   *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, int val) {
+   *  Also assigns the dataframe to a key in the KSMapping. */
+  DataFrame* from_scalar(Key* key, KSMap* kv, KChunkMap* kc, int val) {
     Schema scm("");
     DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_('I');
@@ -122,15 +176,15 @@ class DataFrame : public Object {
     delete[] df->cols_;
     df->cols_ = cols;
 
-    kv->put(key, df);
+    kv->put(key, serialize(df));
     return df;
   }
 
   /**
    *  Create and return a df of 1 value (scalar). Double Version.
    *  This would be useful for storing a value such as a sum.
-   *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, double val) {
+   *  Also assigns the dataframe to a key in the KSMapping. */
+  DataFrame* from_scalar(Key* key, KSMap* kv, KChunkMap* kc, double val) {
     Schema scm("");
     DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_('D');
@@ -144,14 +198,14 @@ class DataFrame : public Object {
     delete[] df->cols_;
     df->cols_ = cols;
 
-    kv->put(key, df);
+    kv->put(key, serialize(df));
     return df;
   }
 
   /**
    *  Create and return a df of 1 value (scalar). Boolean Version.
-   *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, bool val) {
+   *  Also assigns the dataframe to a key in the KSMapping. */
+  DataFrame* from_scalar(Key* key, KSMap* kv, KChunkMap* kc, bool val) {
     Schema scm("");
     DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_('B');
@@ -165,17 +219,18 @@ class DataFrame : public Object {
     delete[] df->cols_;
     df->cols_ = cols;
 
-    kv->put(key, df);
+    kv->put(key, serialize(df));
     return df;
   }
 
   /**
    *  Create and return a df of 1 value (scalar). String Version.
    *  Possible uses are a concatenated String.
-   *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, String* val) {
+   *  Also assigns the dataframe to a key in the KSMapping. */
+  DataFrame* from_scalar(Key* key, KSMap* kv, KChunkMap* kc, String* val) {
     Schema scm("");
     DataFrame* df = new DataFrame(scm, kc);
+
     Column* c = get_new_col_('S');
     StringColumn* sc = c->as_string();
     sc->push_back(val);
@@ -187,7 +242,7 @@ class DataFrame : public Object {
     delete[] df->cols_;
     df->cols_ = cols;
 
-    kv->put(key, df);
+    kv->put(key, serialize(df));
     return df;
   }
 
@@ -354,4 +409,145 @@ class DataFrame : public Object {
     }
     delete row;
   }
+};
+
+
+
+
+
+
+/*************************************************************************
+ * DFArray::
+ * Holds DF pointers. The strings are external.  Nullptr is a valid
+ * value.
+ * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
+ */
+class DFArray : public Array {
+public:
+
+		DataFrame*** arr_;     // internal array of DataFrame* arrays
+		size_t num_arr_;    // number of DataFrame* arrays there are in arr_
+		size_t size_;       // number of DataFrame*s total there are in arr_
+
+		// default construtor - initialize as an empty StringArray
+		DFArray() {
+				set_type_('D');
+				size_ = 0;
+				num_arr_ = 0;
+				arr_ = new DataFrame**[0];
+		}
+
+		// destructor - delete arr_, its sub-arrays, and their dfs
+		~DFArray() {
+				for (size_t i = 0; i < num_arr_; ++i) {
+						delete[] arr_[i];
+				}
+				delete[] arr_;
+		}
+
+		/** returns true if this is equal to that */
+		bool equals(Object* that) {
+				if (that == this) return true;
+				DFArray* x = dynamic_cast<DFArray*>(that);
+				if (x == nullptr) return false;
+				if (size_ != x->size_) return false;
+				for (size_t i = 0; i < size_; ++i) {
+						if (get(i) != x->get(i)) return false;
+				}
+				return true;
+		}
+
+		/** gets the hash code value */
+		size_t hash() {
+				size_t hash = 0;
+				for (size_t i = 0; i < size_; ++i) {
+						hash += 17;
+				}
+				return hash;
+		}
+
+		/**
+		 * turns this Array* into an DFArray* (assuming it is one)
+		 * @returns this Array as an DFArray*
+		 */
+		DFArray* as_df() {
+				return this;
+		}
+
+		/** Returns the df at idx; undefined on invalid idx.
+		 * @param idx: index of DF* to get
+		 * @returns the DF* at that index
+		 */
+		DataFrame* get(size_t idx) {
+				assert(idx < size_);
+				return arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
+		}
+
+		/**
+		 * Acquire ownership for the df.
+		 * replaces the DF* at given index with given DF*
+		 * @param idx: the index at which to place this value
+		 * @param val: val to put at the index
+		 */
+		void set(size_t idx, DataFrame* val) {
+				assert(idx < size_);
+				arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = val;
+		}
+
+		/**
+		 * push the given val to the end of the Array
+		 * @param val: DF* to push back
+		 */
+		void push_back(DataFrame* val) {
+				// the last DF** in arr_ is full
+				// copy DF**s into a new DF*** - copies pointers but not payload
+				if (size_ % STRING_ARR_SIZE == 0) {
+						// increment size values
+						++size_;
+						++num_arr_;
+
+						// create new DF** and initialize with val at first idx
+						DataFrame** dfs = new DataFrame*[STRING_ARR_SIZE];
+						dfs[0] = val;
+
+						// set up a temp DF***, overwrite arr_ with new DF***
+						DataFrame*** tmp = arr_;
+						arr_ = new DataFrame**[num_arr_];
+
+						// for loop to copy values from temp into arr_
+						for (size_t i = 0; i < num_arr_ - 1; ++i) {
+								arr_[i] = tmp[i];
+						}
+
+						// add new DF** into arr_ and delete the temp
+						arr_[num_arr_ - 1] = dfs;
+						delete[] tmp;
+				// we have room in the last DF** of arr_ - add the val
+				} else {
+						arr_[size_ / STRING_ARR_SIZE][size_ % STRING_ARR_SIZE] = val;
+						++size_;
+				}
+		}
+
+		/** remove DF at given idx */
+		void remove(size_t idx) {
+				assert(idx < size_);
+				if (idx == size_ - 1) {
+						arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = NULL;
+				} else {
+						for (size_t i = idx; i < size_; ++i) {
+								set(i, arr_[(i + 1) / STRING_ARR_SIZE][(i + 1) % STRING_ARR_SIZE]);
+						}
+				}
+				--size_;
+				if (size_ % STRING_ARR_SIZE == 0) --num_arr_;
+		}
+
+		/**
+		 * get the amount of DFs in the Array
+		 * @returns the amount of DFs in the Array
+		 */
+		size_t size() {
+				return size_;
+		}
 };

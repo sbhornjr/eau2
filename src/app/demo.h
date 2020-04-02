@@ -21,7 +21,7 @@ public:
   Key* verify = new Key(v,0);
   Key* check = new Key(c,0);
 
-  Demo(size_t idx, KDFMap* kv, KChunkMap* kc): Application(idx, kv, kc) {
+  Demo(size_t idx, KSMap* kv, KChunkMap* kc): Application(idx, kv, kc) {
     run_();
   }
 
@@ -89,7 +89,7 @@ public:
   Demo* d;
   size_t threadId_;
 
-  DemoThread(size_t index, size_t cur_thread, KDFMap* kv, KChunkMap* kc) {
+  DemoThread(size_t index, size_t cur_thread, KSMap* kv, KChunkMap* kc) {
     threadId_ = cur_thread;
     d = new Demo(index, kv, kc);
   }

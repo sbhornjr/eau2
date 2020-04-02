@@ -3,15 +3,15 @@
 
 ### Introduction:
 
-The eau2 application will be used by customers to query large data frames for results in order to analyze big data. It will be able to read large (100+ GB) schema-on-read files and load the data into a data frame using distributed arrays. The data frame will be stored in several underlying nodes hidden in the network layer that use a distributed key-value store and communicate with one another to exchange chunks of data as necessary. It will employ a 3-layer architecture (network - data frame - customer-facing) described below. 
+The eau2 application will be used by customers to query large data frames for results in order to analyze big data. It will be able to read large (100+ GB) schema-on-read files and load the data into a data frame using distributed arrays. The data frame will be stored in several underlying nodes hidden in the network layer that use a distributed key-value store and communicate with one another to exchange chunks of data as necessary. It will employ a 3-layer architecture (network - data frame - customer-facing) described below.
 
 ### Architecture:
 
-The system will consist of three levels. 
+The system will consist of three levels.
 
 The first level will be the network component that contains many nodes divvying up the data in a distributed key value store. This network of nodes can interact with one another to exchange or retrieve data.
 
-The second level will consist of the data frames and distributed arrays to store the values. 
+The second level will consist of the data frames and distributed arrays to store the values.
 
 The third layer will be the customer facing layer. A data analyst can input a query and receive an answer based on computations that happen in the previous two layers.
 
@@ -40,7 +40,7 @@ The Key-Value store will be a <Key, DataFrame> mapping where keys are comprised 
 * DataFrame* getAndWait(Key* key)
 * DataFrame* remove(Key* key)
 
-The application will consist of customer-facing code that allows users to enter queries. The results of queries will be output to the user’s console (or whatever front-end they are accessing the eau2 application from). 
+The application will consist of customer-facing code that allows users to enter queries. The results of queries will be output to the user’s console (or whatever front-end they are accessing the eau2 application from).
 * <return type TBD> sendQuery(String query)
 
 ### Use cases:
@@ -87,7 +87,6 @@ Given a key in the form of some string, we can retrieve, set, or remove a datafr
 
 [Week of March 9] Our project is currently in the planning and preparation stage. Technical debt from the individual components such as the networking layer, the dataframe, and the schema-on-read parser has been resolved. We are able to read from large files and store reasonably sized dataframes. Operations can be carried out on the dataframes such as summation and filtering. At the moment, the network layer is not connected to a distributed Key-Value store. We plan to connect all the individual parts together to form the three layer architecture in the coming week. After that, we will likely need to make performance improvements and do thorough load testing with multi-gigabyte data sets.
 
-[Week of March 16] Our project now has the Key-Value store with operations such as get, put, remove, and wait_and_get, taking in a key and returning a dataframe. We have improved the performance of our system significantly, halving execution time. In order to arrive at this performance boost, we removed the need to copy strings in our columns and arrays. We have changed one of the datatypes - floats - to now be doubles. In getting the trivial example to work for numbers with decimals, we noticed that floats were too small and lost precision after a certain threshold. Thus, doubles allowed us to maintain precision. In changing the datatypes, we had to modify our implementation of schema, columns, serialization, and arrays. The trivial example works for integers as well. We discovered a memory management bug with valgrind where empty schemas (character arrays with a null terminator) were not being appended to correctly. This bug was fixed by splitting our add_column method in schema into two cases (empty schema/non-empty schema). 
+[Week of March 16] Our project now has the Key-Value store with operations such as get, put, remove, and wait_and_get, taking in a key and returning a dataframe. We have improved the performance of our system significantly, halving execution time. In order to arrive at this performance boost, we removed the need to copy strings in our columns and arrays. We have changed one of the datatypes - floats - to now be doubles. In getting the trivial example to work for numbers with decimals, we noticed that floats were too small and lost precision after a certain threshold. Thus, doubles allowed us to maintain precision. In changing the datatypes, we had to modify our implementation of schema, columns, serialization, and arrays. The trivial example works for integers as well. We discovered a memory management bug with valgrind where empty schemas (character arrays with a null terminator) were not being appended to correctly. This bug was fixed by splitting our add_column method in schema into two cases (empty schema/non-empty schema).
 
-[Week of March 23] We got the Demo example working correctly by distributing the KV store. We currently do this using threads instead of our network layer, and by creating a common KDFMap that is shared between each Demo instance. We also cleaned up our file structure a bit by removing unnecessary files. We added unit tests into our testing suite, along with keeping tests from each milestone so that are tests are more cumulative and comprehensive. We still need to switch from using threads to using our network. We will first need to create serialization methods for DataFrames, then alter the KV store to communicate with the network layer. After that, we will have to figure out how to make columns/arrays distributed instead of just the KV store.
-
+[Week of March 23] We got the Demo example working correctly by distributing the KV store. We currently do this using threads instead of our network layer, and by creating a common KSMap that is shared between each Demo instance. We also cleaned up our file structure a bit by removing unnecessary files. We added unit tests into our testing suite, along with keeping tests from each milestone so that are tests are more cumulative and comprehensive. We still need to switch from using threads to using our network. We will first need to create serialization methods for DataFrames, then alter the KV store to communicate with the network layer. After that, we will have to figure out how to make columns/arrays distributed instead of just the KV store.

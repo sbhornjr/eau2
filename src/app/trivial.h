@@ -11,7 +11,7 @@ public:
   Key* key_int;
   Key* key_double;
 
-  Trivial(size_t idx, KDFMap* kv, KChunkMap* kc) : Application(idx, kv, kc) {
+  Trivial(size_t idx, KSMap* kv, KChunkMap* kc) : Application(idx, kv, kc) {
     String* s1 = new String("int-triv");
     String* s2 = new String("double-triv");
     key_int = new Key(s1, 0);

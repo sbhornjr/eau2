@@ -3,9 +3,6 @@
 
 #include "object.h"
 #include "string.h"
-#include "dataframe.h"
-#include "array.h"
-#include "serial.h"
 #include "chunk.h"
 #include <cstdio>
 
@@ -237,158 +234,22 @@ class KChunkMap: public Map {
 		}
 };
 
-/*************************************************************************
- * DFArray::
- * Holds DF pointers. The strings are external.  Nullptr is a valid
- * value.
- * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
- */
-class DFArray : public Array {
-public:
-
-		DataFrame*** arr_;     // internal array of DataFrame* arrays
-		size_t num_arr_;    // number of DataFrame* arrays there are in arr_
-		size_t size_;       // number of DataFrame*s total there are in arr_
-
-		// default construtor - initialize as an empty StringArray
-		DFArray() {
-				set_type_('D');
-				size_ = 0;
-				num_arr_ = 0;
-				arr_ = new DataFrame**[0];
-		}
-
-		// destructor - delete arr_, its sub-arrays, and their dfs
-		~DFArray() {
-				for (size_t i = 0; i < num_arr_; ++i) {
-						delete[] arr_[i];
-				}
-				delete[] arr_;
-		}
-
-		/** returns true if this is equal to that */
-		bool equals(Object* that) {
-				if (that == this) return true;
-				DFArray* x = dynamic_cast<DFArray*>(that);
-				if (x == nullptr) return false;
-				if (size_ != x->size_) return false;
-				for (size_t i = 0; i < size_; ++i) {
-						if (get(i) != x->get(i)) return false;
-				}
-				return true;
-		}
-
-		/** gets the hash code value */
-		size_t hash() {
-				size_t hash = 0;
-				for (size_t i = 0; i < size_; ++i) {
-						hash += 17;
-				}
-				return hash;
-		}
-
-		/**
-		 * turns this Array* into an DFArray* (assuming it is one)
-		 * @returns this Array as an DFArray*
-		 */
-		DFArray* as_df() {
-				return this;
-		}
-
-		/** Returns the df at idx; undefined on invalid idx.
-		 * @param idx: index of DF* to get
-		 * @returns the DF* at that index
-		 */
-		DataFrame* get(size_t idx) {
-				assert(idx < size_);
-				return arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
-		}
-
-		/**
-		 * Acquire ownership for the df.
-		 * replaces the DF* at given index with given DF*
-		 * @param idx: the index at which to place this value
-		 * @param val: val to put at the index
-		 */
-		void set(size_t idx, DataFrame* val) {
-				assert(idx < size_);
-				arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = val;
-		}
-
-		/**
-		 * push the given val to the end of the Array
-		 * @param val: DF* to push back
-		 */
-		void push_back(DataFrame* val) {
-				// the last DF** in arr_ is full
-				// copy DF**s into a new DF*** - copies pointers but not payload
-				if (size_ % STRING_ARR_SIZE == 0) {
-						// increment size values
-						++size_;
-						++num_arr_;
-
-						// create new DF** and initialize with val at first idx
-						DataFrame** dfs = new DataFrame*[STRING_ARR_SIZE];
-						dfs[0] = val;
-
-						// set up a temp DF***, overwrite arr_ with new DF***
-						DataFrame*** tmp = arr_;
-						arr_ = new DataFrame**[num_arr_];
-
-						// for loop to copy values from temp into arr_
-						for (size_t i = 0; i < num_arr_ - 1; ++i) {
-								arr_[i] = tmp[i];
-						}
-
-						// add new DF** into arr_ and delete the temp
-						arr_[num_arr_ - 1] = dfs;
-						delete[] tmp;
-				// we have room in the last DF** of arr_ - add the val
-				} else {
-						arr_[size_ / STRING_ARR_SIZE][size_ % STRING_ARR_SIZE] = val;
-						++size_;
-				}
-		}
-
-		/** remove DF at given idx */
-		void remove(size_t idx) {
-				assert(idx < size_);
-				if (idx == size_ - 1) {
-						arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = NULL;
-				} else {
-						for (size_t i = idx; i < size_; ++i) {
-								set(i, arr_[(i + 1) / STRING_ARR_SIZE][(i + 1) % STRING_ARR_SIZE]);
-						}
-				}
-				--size_;
-				if (size_ % STRING_ARR_SIZE == 0) --num_arr_;
-		}
-
-		/**
-		 * get the amount of DFs in the Array
-		 * @returns the amount of DFs in the Array
-		 */
-		size_t size() {
-				return size_;
-		}
-};
-
 /**
- * Represents a map containing Key-DF key-value pairs.
+ * Represents a map containing Key-SerializedDataFrames key-value pairs.
  * @authors: horn.s@husky.neu.edu, armani.a@husky.neu.edu
  */
-class KDFMap: public Map {
+class KSMap: public Map {
 	public:
 
-		DFArray* values_;
+		StringArray* values_;
 		Serializer s;
 		KChunkMap* chunk_map;
 
-		KDFMap(KChunkMap* chunk_map) : Map() {
-			values_ = new DFArray();
+		KSMap(KChunkMap* chunk_map) : Map() {
+			values_ = new StringArray();
 		}
 
-		~KDFMap() {
+		~KSMap() {
 			delete values_;
 		}
 
@@ -397,7 +258,7 @@ class KDFMap: public Map {
 		 * @param key: the key whose value we want to get
 		 * @returns the value that corresponds with the given key
 		 */
-		DataFrame* get(Key* key) {
+		String* get(Key* key) {
 			int ind = -1;
 			for (size_t i = 0; i < size_; ++i) {
 				if (key->equals(keys_->get(i))) {
@@ -408,7 +269,7 @@ class KDFMap: public Map {
 			if (ind == -1) {
 				return nullptr;
 			}
-			DataFrame* df = values_->get(ind);
+			String* df = values_->get(ind);
 			return df;
 		}
 
@@ -417,7 +278,7 @@ class KDFMap: public Map {
 		 * @param key: the key whose value we want to get
 		 * @returns the value that corresponds with the given key
 		 */
-		DataFrame* getAndWait(Key* key) {
+		String* getAndWait(Key* key) {
 			int ind = -1;
 			while (ind == -1) {
 				for (size_t i = 0; i < size_; ++i) {
@@ -427,7 +288,7 @@ class KDFMap: public Map {
 					}
 				}
 			}
-			DataFrame* df = values_->get(ind);
+			String* df = values_->get(ind);
 			return df;
 		}
 
@@ -438,7 +299,7 @@ class KDFMap: public Map {
 		 * @param key: the key whose value we want to set
 		 * @param value: the value we want associated with the key
 		 */
-		void put(Key* key, DataFrame* value) {
+		void put(Key* key, String* value) {
 			for (size_t i = 0; i < size_; ++i) {
 				if (key->equals(keys_->get(i))) {
 					values_->set(i, value);
@@ -455,7 +316,7 @@ class KDFMap: public Map {
 		 * @param key: the key whose value we want to remove
 		 * @returns the value that corresponds with the given key
 		 */
-		DataFrame* remove(Key* key) {
+		String* remove(Key* key) {
 			int ind = -1;
 			for (size_t i = 0; i < size_; ++i) {
 				if (key->equals(keys_->get(i))) {
@@ -468,7 +329,7 @@ class KDFMap: public Map {
 				exit(1);
 			}
 			Key* k = keys_->get(ind);
-			DataFrame* df = values_->get(ind);
+			String* df = values_->get(ind);
 			keys_->remove(ind);
 			values_->remove(ind);
 			--size_;
@@ -488,7 +349,7 @@ class KDFMap: public Map {
 		 * Gets all the values of this map
 		 * @returns the array of values
 		 */
-		DFArray* getValues() {
+		StringArray* getValues() {
 			return values_;
 		}
 };

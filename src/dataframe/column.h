@@ -693,3 +693,34 @@ public:
         done_ = true;
     }
 };
+
+/**
+  * Serializes Column types.
+  * @authors armani.a@husky.neu.edu, horn.s@husky.neu.edu
+  */
+class ColumnSerializer : public Serializer {
+public:
+
+  const char* serialize(Column* col) {
+      ByteArray* barr = new ByteArray();
+
+      // serialize the type
+      barr->push_string("\t\ttyp: ");
+      barr->push_back((char)col->get_type());
+
+      // serialize the column keys
+      barr->push_string("\n\t\tkys: ");
+      const char* ser_keys = Serializer::serialize(col->keys_);
+      barr->push_string(ser_keys);
+      delete ser_keys;
+
+      const char* str = barr->as_bytes();
+      delete barr;
+      return str;
+  }
+
+  Column* get_column(const char* str, size_t* ii) {
+    return nullptr;
+  }
+
+};

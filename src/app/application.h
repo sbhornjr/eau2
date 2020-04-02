@@ -12,11 +12,11 @@
   */
 class Application : public Object {
 public:
-    KDFMap* kv_;
+    KSMap* kv_;
     KChunkMap* kc_;
     size_t idx;
 
-    Application(size_t i, KDFMap* kv, KChunkMap* kc) {
+    Application(size_t i, KSMap* kv, KChunkMap* kc) {
       idx = i;
       kv_ = kv;
       kc_ = kc;
@@ -30,7 +30,7 @@ public:
     }
 
     /** getter for the KV store that this application is using **/
-    KDFMap* getKVStore() {
+    KSMap* getKVStore() {
       return kv_;
     }
 };

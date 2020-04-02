@@ -43,7 +43,7 @@ void milestone1(string filename) {
  * tests the trivial example.
  */
 void milestone2() {
-    KDFMap* masterKV = new KDFMap();
+    KSMap* masterKV = new KSMap();
     Trivial t(0, masterKV);
     delete masterKV;
 }
@@ -52,7 +52,7 @@ void milestone2() {
   * runs the example code given with a distributed kv store
   */
 void milestone3() {
-    KDFMap* masterKV = new KDFMap();
+    KSMap* masterKV = new KSMap();
     DemoThread d1(0, 100, masterKV);
     DemoThread d2(1, 200, masterKV);
     DemoThread d3(2, 300, masterKV);

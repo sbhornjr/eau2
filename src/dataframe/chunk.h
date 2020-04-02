@@ -2,6 +2,7 @@
 #include "object.h"
 #include "string.h"
 #include "array.h"
+#include "serial.h"
 
 class IntChunk;
 class BoolChunk;
@@ -296,4 +297,50 @@ public:
     size_t size() {
         return size_;
     }
+};
+
+
+/**
+  * Serializes Chunk types.
+  * @authors armani.a@husky.neu.edu, horn.s@husky.neu.edu
+  */
+class ChunkSerializer: public Serializer {
+public:
+
+  const char* serialize(Chunk* chunk) {
+    ByteArray* barr = new ByteArray();
+
+    // serialize the type of chunk
+    barr->push_string("typ: ");
+    char ser_type[1];
+    ser_type[0] = chunk->type_;
+    barr->push_string(ser_type);
+
+    // serialize the elements of chunk
+    const char* ser_elm;
+    if (chunk->type_ == 'I') {
+      IntChunk* ic = chunk->as_int();
+      ser_elm = Serializer::serialize(ic->arr_);
+    } else if (chunk->type_ == 'D') {
+      DoubleChunk* dc = chunk->as_double();
+      ser_elm = Serializer::serialize(dc->arr_);
+    } else if (chunk->type_ == 'B') {
+      BoolChunk* bc = chunk->as_bool();
+      ser_elm = Serializer::serialize(bc->arr_);
+    } else if (chunk->type_ == 'S') {
+      StringChunk* sc = chunk->as_string();
+      ser_elm = Serializer::serialize(sc->arr_);
+    }
+
+    barr->push_string(ser_elm);
+    delete[] ser_elm;
+
+    const char* str = barr->as_bytes();
+    delete barr;
+    return str;
+  }
+
+  Chunk* get_chunk(const char* str) {
+    return nullptr;
+  }
 };
