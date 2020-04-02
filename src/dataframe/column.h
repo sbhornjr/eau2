@@ -122,8 +122,7 @@ public:
         set_type_('I');
         done_ = true;
         kv_ = kv;
-        srand(time(NULL));
-        id_ = rand() % BOOL_ARR_SIZE;
+        id_ = kv->get_id();
 
         // each int* in arr_ will be of size
         chunk_ = new IntChunk();
@@ -144,7 +143,7 @@ public:
         // for loop to fill keys_
         for (size_t i = 0; i < sn; ++i) {
             // our array of size is filled - send to kv
-            if (i % ARR_SIZE == 0 && i != 0) {
+            if (chunk_->full_) {
                 string k = to_string(id_) + "_" + to_string(curr_chunk);
                 Key* key = new Key(new String(k.c_str()), 0);
                 keys_->push_back(key);
@@ -177,7 +176,7 @@ public:
         assert(idx < size_);
 
         // we have the chunk this val is in
-        if (idx / ARR_SIZE == chunk_no_) {
+        if (chunk_no_ >= 0 && idx / ARR_SIZE == (size_t)chunk_no_) {
             return chunk_->get(idx % ARR_SIZE);
         // we don't have the chunk -> get it
         } else {
@@ -211,7 +210,6 @@ public:
             string k = to_string(id_) + "_" + to_string(num_chunks_);
             Key* key = new Key(new String(k.c_str()), 0);
             keys_->push_back(key);
-            cout << this << ' ' << id_ << " sending to map" << endl;
             kv_->put(key, chunk_);
 
             ++num_chunks_;
@@ -263,8 +261,7 @@ public:
         keys_ = new KeyArray();
         done_ = false;
         kv_ = kv;
-        srand(time(NULL));
-        id_ = rand() % BOOL_ARR_SIZE;
+        id_ = kv->get_id();
         chunk_ = new BoolChunk();
     }
 
@@ -277,14 +274,13 @@ public:
         set_type_('B');
         done_ = true;
         kv_ = kv;
-        srand(time(NULL));
-        id_ = rand() % BOOL_ARR_SIZE;
+        id_ = kv->get_id();
 
         // each bool chunk in arr_ will be of size
         chunk_ = new BoolChunk();
 
         // set the number of num_arr_ we will have based on n
-        if (n % ARR_SIZE == 0) num_chunks_ = n / ARR_SIZE;
+        if (n % BOOL_ARR_SIZE == 0) num_chunks_ = n / BOOL_ARR_SIZE;
         else num_chunks_ = (n / ARR_SIZE) + 1;
 
         // initialize arr_ and n
@@ -299,7 +295,7 @@ public:
         // for loop to fill keys_
         for (size_t i = 0; i < sn; ++i) {
             // our array of size is filled - send to kv
-            if (i % ARR_SIZE == 0 && i != 0) {
+            if (chunk_->full_) {
                 string k = to_string(id_) + "_" + to_string(curr_chunk);
                 Key* key = new Key(new String(k.c_str()), 0);
                 keys_->push_back(key);
@@ -332,14 +328,14 @@ public:
         assert(idx < size_);
 
         // we have the chunk this val is in
-        if (idx / ARR_SIZE == chunk_no_) {
-            return chunk_->get(idx % ARR_SIZE);
+        if (chunk_no_ >= 0 && idx / BOOL_ARR_SIZE == (size_t)chunk_no_) {
+            return chunk_->get(idx % BOOL_ARR_SIZE);
         // we don't have the chunk -> get it
         } else {
-            delete chunk_;
-            chunk_ = kv_->getAndWait(keys_->get(idx / ARR_SIZE))->as_bool();
-            chunk_no_ = idx / ARR_SIZE;
-            return chunk_->get(idx % ARR_SIZE);
+            Key* k = keys_->get(idx / BOOL_ARR_SIZE);
+            chunk_ = kv_->get(k)->as_bool();
+            chunk_no_ = idx / BOOL_ARR_SIZE;
+            return chunk_->get(idx % BOOL_ARR_SIZE);
         }
     }
 
@@ -390,6 +386,9 @@ public:
         keys_->push_back(key);
         kv_->put(key, chunk_);
 
+        chunk_ = nullptr;
+        chunk_no_ = -1;
+
         done_ = true;
     }
 };
@@ -412,8 +411,7 @@ public:
         keys_ = new KeyArray();
         done_ = false;
         kv_ = kv;
-        srand(time(NULL));
-        id_ = rand() % BOOL_ARR_SIZE;
+        id_ = kv->get_id();
         chunk_ = new DoubleChunk();
     }
 
@@ -423,11 +421,10 @@ public:
      * @param ...: the dubs, handled by va_list etc.
      */
     DoubleColumn(KChunkMap* kv, int n, ...) {
-        set_type_('I');
+        set_type_('D');
         done_ = true;
         kv_ = kv;
-        srand(time(NULL));
-        id_ = rand() % BOOL_ARR_SIZE;
+        id_ = kv->get_id();
 
         // each Double chunk in arr_ will be of size
         chunk_ = new DoubleChunk();
@@ -448,7 +445,7 @@ public:
         // for loop to fill keys_
         for (size_t i = 0; i < sn; ++i) {
             // our array of size is filled - send to kv
-            if (i % ARR_SIZE == 0 && i != 0) {
+            if (chunk_->full_) {
                 string k = to_string(id_) + "_" + to_string(curr_chunk);
                 Key* key = new Key(new String(k.c_str()), 0);
                 keys_->push_back(key);
@@ -481,12 +478,12 @@ public:
         assert(idx < size_);
 
         // we have the chunk this val is in
-        if (idx / ARR_SIZE == chunk_no_) {
+        if (chunk_no_ >= 0 && idx / ARR_SIZE == (size_t)chunk_no_) {
             return chunk_->get(idx % ARR_SIZE);
         // we don't have the chunk -> get it
         } else {
-            delete chunk_;
-            chunk_ = kv_->getAndWait(keys_->get(idx / ARR_SIZE))->as_double();
+            Key* k = keys_->get(idx / ARR_SIZE);
+            chunk_ = kv_->get(k)->as_double();
             chunk_no_ = idx / ARR_SIZE;
             return chunk_->get(idx % ARR_SIZE);
         }
@@ -539,6 +536,9 @@ public:
         keys_->push_back(key);
         kv_->put(key, chunk_);
 
+        chunk_ = nullptr;
+        chunk_no_ = -1;
+
         done_ = true;
     }
 };
@@ -556,14 +556,13 @@ public:
 
     // default constructor - initialize as an empty StringColumn
     StringColumn(KChunkMap* kv) {
-        set_type_('I');
+        set_type_('S');
         size_ = 0;
         num_chunks_ = 0;
         keys_ = new KeyArray();
         done_ = false;
         kv_ = kv;
-        srand(time(NULL));
-        id_ = rand() % BOOL_ARR_SIZE;
+        id_ = kv->get_id();
         chunk_ = new StringChunk();
     }
 
@@ -573,18 +572,17 @@ public:
      * @param ...: the Strings, handled by va_list etc.
      */
     StringColumn(KChunkMap* kv, int n, ...) {
-        set_type_('I');
+        set_type_('S');
         done_ = true;
         kv_ = kv;
-        srand(time(NULL));
-        id_ = rand() % BOOL_ARR_SIZE;
+        id_ = kv->get_id();
 
         // each String chunk in arr_ will be of size
         chunk_ = new StringChunk();
 
         // set the number of num_arr_ we will have based on n
-        if (n % ARR_SIZE == 0) num_chunks_ = n / ARR_SIZE;
-        else num_chunks_ = (n / ARR_SIZE) + 1;
+        if (n % STRING_ARR_SIZE == 0) num_chunks_ = n / STRING_ARR_SIZE;
+        else num_chunks_ = (n / STRING_ARR_SIZE) + 1;
 
         // initialize arr_ and n
         keys_ = new KeyArray();
@@ -598,7 +596,7 @@ public:
         // for loop to fill keys_
         for (size_t i = 0; i < sn; ++i) {
             // our array of size is filled - send to kv
-            if (i % ARR_SIZE == 0 && i != 0) {
+            if (chunk_->full_) {
                 string k = to_string(id_) + "_" + to_string(curr_chunk);
                 Key* key = new Key(new String(k.c_str()), 0);
                 keys_->push_back(key);
@@ -631,14 +629,14 @@ public:
         assert(idx < size_);
 
         // we have the chunk this val is in
-        if (idx / ARR_SIZE == chunk_no_) {
-            return chunk_->get(idx % ARR_SIZE);
+        if (chunk_no_ >= 0 && idx / ARR_SIZE == (size_t)chunk_no_) {
+            return chunk_->get(idx % STRING_ARR_SIZE);
         // we don't have the chunk -> get it
         } else {
-            delete chunk_;
-            chunk_ = kv_->getAndWait(keys_->get(idx / ARR_SIZE))->as_string();
-            chunk_no_ = idx / ARR_SIZE;
-            return chunk_->get(idx % ARR_SIZE);
+            Key* k = keys_->get(idx / STRING_ARR_SIZE);
+            chunk_ = kv_->get(k)->as_string();
+            chunk_no_ = idx / STRING_ARR_SIZE;
+            return chunk_->get(idx % STRING_ARR_SIZE);
         }
     }
 
@@ -688,6 +686,9 @@ public:
         Key* key = new Key(new String(k.c_str()), 0);
         keys_->push_back(key);
         kv_->put(key, chunk_);
+
+        chunk_ = nullptr;
+        chunk_no_ = -1;
 
         done_ = true;
     }

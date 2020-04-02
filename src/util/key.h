@@ -22,6 +22,10 @@ public:
     homeNode_ = homeNode;
   }
 
+  ~Key() {
+    delete name_;
+  }
+
   // Returns the name of this key.
   String* getName() {
     return name_;

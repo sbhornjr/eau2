@@ -141,6 +141,7 @@ class KChunkMap: public Map {
 			num_nodes = num_nodes_;
 			this_node = this_node_;
 			next_id = 0;
+			next_node = 0;
 		}
 
 		~KChunkMap() {
@@ -182,7 +183,7 @@ class KChunkMap: public Map {
 		 */
 		Chunk* getAndWait(Key* key) {
 			// TODO
-
+			return nullptr;
 		}
 
 		/**
@@ -200,7 +201,6 @@ class KChunkMap: public Map {
 
 			// does this chunk belong here
 			if (key->getHomeNode() == this_node) {
-				cout << "adding to map" << key->name_->c_str() << endl;
 				// yes - add to map
 				keys_->push_back(key);
 				values_->push_back(value);
@@ -217,7 +217,7 @@ class KChunkMap: public Map {
 		 */
 		Chunk* remove(Key* key) {
 			// TODO
-
+			return nullptr;
 		}
 
 		/**

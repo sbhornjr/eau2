@@ -7,6 +7,7 @@
 #include "map.h"
 #include <string>
 #include <iostream>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -26,19 +27,52 @@ int main(int argc, const char** argv) {
     }
     ic->finalize();
 
-    cout << "column created" << endl;
+    cout << "int column created" << endl;
 
-    IntColumn* ic2 = new IntColumn(kc);
+    DoubleColumn* dc = new DoubleColumn(kc);
     for (size_t i = 500 * 256; i > 0; --i) {
-      ic2->push_back(i);
+      dc->push_back((double)i);
     }
-    ic2->finalize();
+    dc->finalize();
+
+    cout << "double column created" << endl;
+
+    StringColumn* sc = new StringColumn(kc);
+    for (size_t i = 500 * 256; i > 0; --i) {
+      sc->push_back(new String(to_string((int)i).c_str()));
+    }
+    sc->finalize();
+
+    cout << "string column created" << endl;
+
+    BoolColumn* bc = new BoolColumn(kc);
+    bool b = false;
+    for (size_t i = 500 * 256; i > 0; --i) {
+      bc->push_back(b);
+      b = !b;
+    }
+    bc->finalize();
+
+    cout << "bool column created" << endl;
 
     Schema scm;
     DataFrame* df = new DataFrame(scm, kc);
     df->add_column(ic);
-    df->add_column(ic2);
+    df->add_column(dc);
+    df->add_column(sc);
+    df->add_column(bc);
 
-  //  Serializer s;
-  //  cout << s.serialize(df) << endl;
+    //delete ic;
+    //delete dc;
+    //delete sc;
+    //delete bc;
+    delete df;
+    delete kc;
+
+    //for (size_t i = 0; i < df->nrows(); ++i) {
+    //  cout << df->get_int(0, i) << '\t' << df->get_double(1, i) << '\t' << df->get_string(2, i)->c_str() << '\t' << df->get_bool(3, i) << endl;
+    //}
+
+    //Serializer s;
+    //cout << s.serialize(df) << endl;
 }

@@ -209,8 +209,9 @@ class DataFrame : public Object {
     }
     // create new column of given column's type to copy over values
     char type = col->get_type();
-    Column* c = get_new_col_(type);
+    Column* c = col; //get_new_col_(type);
 
+    /**
     // for loop to copy values from col into new column
     for (size_t i = 0; i < col->size(); ++i) {
       if (type == 'I') {
@@ -227,7 +228,9 @@ class DataFrame : public Object {
         c->push_back(sc->get(i));
       }
     }
+    c->finalize();
     // add col to schema
+    */
     schema_->add_column(type);
 
     // add the new column into cols_ by copying values into a new column**
@@ -236,7 +239,7 @@ class DataFrame : public Object {
     for (size_t i = 0; i < schema_->width() - 1; ++i) {
       cols_[i] = tmp[i];
     }
-    cols_[schema_->width()] = c;
+    cols_[schema_->width() - 1] = c;
     delete[] tmp;
   }
 

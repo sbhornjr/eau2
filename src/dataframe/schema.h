@@ -97,15 +97,15 @@ class Schema : public Object {
       oneChar[0] = typ;
       newtypes = new String(oneChar, 1);
     } else {
-    // Append the typ onto our types string.
-    size_t len = types_->size();
-    char* types = types_->c_str();
-    types[len++] = typ;
-    types[len] = '\0';
-    newtypes = new String(types);
-   }
-   delete types_;
-   types_ = newtypes;
+      // Append the typ onto our types string.
+      size_t len = types_->size();
+      char* types = types_->c_str();
+      types[len++] = typ;
+      types[len] = '\0';
+      newtypes = new String(types);
+    }
+    delete types_;
+    types_ = newtypes;
   }
 
   /** Add a row */
