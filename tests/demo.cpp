@@ -75,7 +75,20 @@ int main(int argc, const char** argv) {
     //  cout << df2->get_int(0, i) << '\t' << df2->get_double(1, i) << '\t' << df2->get_string(2, i)->c_str() << '\t' << df2->get_bool(3, i) << endl;
     //}
 
+    sc->get(0);
+    StringChunk* schunk = sc->chunk_;
+    ChunkSerializer cs;
+
+    const char* ser_chunk = cs.serialize(schunk);
+    //cout << ser_chunk << endl;
+    cs.get_chunk(ser_chunk)->as_string();
+    //for (size_t i = 0; i < schunk2->size_; ++i) {
+    //  cout << schunk2->get(i)->c_str() << endl;
+    //}
+
     delete df;
+    delete[] ser_chunk;
+    //delete schunk2;
     delete[] ser_df;
     delete df2;
     delete kc;

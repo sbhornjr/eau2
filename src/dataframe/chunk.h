@@ -332,6 +332,7 @@ public:
       ser_elm = Serializer::serialize(sc->arr_);
     }
 
+    barr->push_back('\n');
     barr->push_string(ser_elm);
     delete[] ser_elm;
 
@@ -341,6 +342,56 @@ public:
   }
 
   Chunk* get_chunk(const char* str) {
-    return nullptr;
+    char type;
+
+    size_t i = 0;
+
+    // get the type of this line - should be typ
+    char type_buff[4];
+    memcpy(type_buff, &str[i], 3);
+    type_buff[3] = 0;
+
+    // first needs to be type so we know which column to create
+    if (strcmp(type_buff, "typ") != 0) return nullptr;
+
+    // get the type
+    i += 5;
+    type = str[i];
+    i += 2;
+
+    Serializer s;
+    Chunk* ch;
+
+    // create correct column
+    if (type == 'I') {
+      IntChunk* c = new IntChunk();
+      delete c->arr_;
+      c->arr_ = s.get_int_array(&str[i]);
+      c->size_ = c->arr_->size();
+      ch = c;
+    }
+    else if (type == 'B') {
+      BoolChunk* c = new BoolChunk();
+      delete c->arr_;
+      c->arr_ = s.get_bool_array(&str[i]);
+      c->size_ = c->arr_->size();
+      ch = c;
+    }
+    else if (type == 'D') {
+      DoubleChunk* c = new DoubleChunk();
+      delete c->arr_;
+      c->arr_ = s.get_double_array(&str[i]);
+      c->size_ = c->arr_->size();
+      ch = c;
+    }
+    else if (type == 'S') {
+      StringChunk* c = new StringChunk();
+      delete c->arr_;
+      c->arr_ = s.get_string_array(&str[i]);
+      c->size_ = c->arr_->size();
+      ch = c;
+    }
+
+    return ch;
   }
 };

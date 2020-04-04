@@ -34,6 +34,16 @@ public:
       return str;
   }
 
+  const char* serialize(int i) {
+      ByteArray* barr = new ByteArray();
+      char num[16];
+      sprintf(num, "%i", i);
+      barr->push_string(num);
+      const char* str = barr->as_bytes();
+      delete barr;
+      return str;
+  }
+
   const char* serialize(struct sockaddr_in addr) {
       ByteArray* barr = new ByteArray();
 
@@ -154,9 +164,8 @@ public:
           const char* ser_str = serialize(sarr->get(i));
           barr->push_string(ser_str);
           barr->push_string(", ");
-          delete ser_str;
+          delete[] ser_str;
       }
-
 
       // add last element of array
       const char* ser_str = serialize(sarr->get(sarr->size() - 1));
@@ -363,7 +372,8 @@ public:
               next_bool = strtok(ar_line, ", ");
               while (next_bool != NULL) {
                   i += strlen(next_bool) + 2;
-                  barr->push_back(atof(next_bool));
+                  if (strcmp(next_bool, "true") == 0) barr->push_back(1);
+                  else barr->push_back(0);
                   next_bool = strtok(NULL, ", ");
               }
               delete[] ar_line;
@@ -388,14 +398,14 @@ public:
       // serialize array
       barr->push_string("\narr: ");
       for (size_t i = 0; i < iarr->size() - 1; ++i) {
-          const char* ser_int = serialize((double)iarr->get(i));
+          const char* ser_int = serialize((int)iarr->get(i));
           barr->push_string(ser_int);
           barr->push_string(", ");
           delete[] ser_int;
       }
 
       // add last element of array
-      const char* ser_int = serialize((double)iarr->get(iarr->size() - 1));
+      const char* ser_int = serialize((int)iarr->get(iarr->size() - 1));
       barr->push_string(ser_int);
       delete[] ser_int;
 
