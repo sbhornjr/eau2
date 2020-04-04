@@ -98,7 +98,6 @@ public:
       return addr;
   }
 
-
   size_t get_size(const char* str, size_t* i) {
       size_t new_line_loc, sz;
       size_t n = 5;
@@ -455,15 +454,35 @@ public:
       return iarr;
   }
 
-  /**
-    * TODO
-    */
   const char* serialize(Key* key) {
-    return nullptr;
+    ByteArray* barr = new ByteArray();
+
+    // serialize the home node
+    barr->push_string("\t\t\t\tnde: ");
+    const char* ser_nde = serialize(key->getHomeNode());
+    barr->push_string(ser_nde);
+    delete[] ser_nde;
+
+    // serialize the key name
+    barr->push_string("\n\t\t\t\tnme: ");
+    const char* ser_nme = serialize(key->getName());
+    barr->push_string(ser_nme);
+    delete[] ser_nme;
+
+    const char* str = barr->as_bytes();
+    delete barr;
+    return str;
   }
 
   const char* serialize(KeyArray* keys) {
       ByteArray* barr = new ByteArray();
+
+      // serialize number of keys
+      barr->push_string("\t\t\tsiz: ");
+      const char* ser_siz = serialize(keys->size());
+      barr->push_string(ser_siz);
+      delete[] ser_siz;
+      barr->push_back('\n');
 
       // serialize each key
       for (size_t i = 0; i < keys->size(); ++i) {
@@ -471,7 +490,7 @@ public:
           const char* ser_key = serialize(keys->get(i));
           barr->push_string(ser_key);
           if (i != keys->size() - 1) barr->push_back('\n');
-          delete ser_key;
+          delete[] ser_key;
       }
 
       const char* str = barr->as_bytes();
@@ -479,4 +498,70 @@ public:
       return str;
   }
 
+  Key* get_key(const char* str, size_t* ii) {
+    // make sure node line
+    size_t i = 0;
+    char type_buff[4];
+    memcpy(type_buff, &str[i], 3);
+    type_buff[3] = 0;
+    if (strcmp(type_buff, "nde") != 0) return nullptr;
+
+    size_t nde = get_size(&str[i], &i);
+
+    // name line
+    i += 4;
+    memcpy(type_buff, &str[i], 3);
+    type_buff[3] = 0;
+    if (strcmp(type_buff, "nme") != 0) return nullptr;
+
+    // find the end of the line
+    i += 6;
+    size_t new_line_loc = 0;
+    for (size_t j = i; str[j] != '\n' && str[j] != 0; ++j) {
+      new_line_loc = j;
+    }
+    ++new_line_loc;
+
+    // get the name
+    char buff[new_line_loc - i];
+    memcpy(buff, &str[i], new_line_loc - i - 1);
+    buff[new_line_loc - i - 1] = 0;
+
+    Key* k = new Key(new String(buff), nde);
+
+    (*ii) += new_line_loc + 1;
+
+    return k;
+  }
+
+  KeyArray* get_key_array(const char* str, size_t* ii) {
+    size_t i = 0;
+    size_t size;
+
+    // make sure type of this line is kys
+    char type_buff[4];
+    memcpy(type_buff, &str[i], 3);
+    type_buff[3] = 0;
+    if (strcmp(type_buff, "kys") != 0) return nullptr;
+
+    // get number of keys
+    i += 8;
+    memcpy(type_buff, &str[i], 3);
+    type_buff[3] = 0;
+    if (strcmp(type_buff, "siz") != 0) return nullptr;
+    size = get_size(&str[i], &i);
+
+    KeyArray* karr = new KeyArray();
+
+    // get keys
+    for (size_t j = 0; j < size; ++j) {
+      i += 12;
+      Key* k = get_key(&str[i], &i);
+      karr->push_back(k);
+    }
+
+    (*ii) += i;
+
+    return karr;
+  }
 };

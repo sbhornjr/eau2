@@ -59,58 +59,51 @@ class DataFrame : public Object {
       barr->push_string("cls:\n");
 
       Schema scm = df->get_schema();
-      ColumnSerializer* s = new ColumnSerializer;
+      ColumnSerializer s(kv_);
 
       for (size_t i = 0; i < scm.width(); ++i) {
-          if (i != 0 && i != scm.width() - 1) barr->push_back('\n');
+          if (i != 0) barr->push_back('\n');
           barr->push_string("\tcol:\n");
-          const char* ser_col = s->serialize(df->cols_[i]);
+          const char* ser_col = s.serialize(df->cols_[i]);
           barr->push_string(ser_col);
-          delete ser_col;
+          delete[] ser_col;
       }
 
       const char* str = barr->as_bytes();
       delete barr;
-      delete s;
 
       return str;
   }
 
-  /** TODO!
+  /**
     */
   DataFrame* get_dataframe(const char* str) {
-      size_t new_line_loc, i;
-      const char* type;
-
-      Schema* scm;
-
-      // go through lines of str
-      i = 0;
-      while (i < strlen(str)) {
-          // get the type of this line
-          char type_buff[4];
-          memcpy(type_buff, &str[i], 3);
-          type_buff[3] = 0;
-          // this is the columns line
-          if (strcmp(type_buff, "cls") == 0) {
-              Schema scm;
-              DataFrame* df = new DataFrame(scm);
-              i += 6;
-              while (i < strlen(str)) {
-                  i += 7;
-                  Column* col = get_column(&str[i], &i);
-                  df->add_column(col);
-              }
-          }
-          else break;
+      // should only be one line, no while loop
+      size_t i = 0;
+      // get the type of this line
+      char type_buff[4];
+      memcpy(type_buff, &str[i], 3);
+      type_buff[3] = 0;
+      // this is the columns line
+      if (strcmp(type_buff, "cls") == 0) {
+        Schema scm;
+        DataFrame* df = new DataFrame(scm, kv_);
+        i += 5;
+        ColumnSerializer cs(kv_);
+        while (i < strlen(str)) {
+          i += 8;
+          Column* col = cs.get_column(&str[i], &i);
+          df->add_column(col);
+        }
+        return df;
       }
-      return nullptr;
+      else return nullptr;
   }
 
   /**
    *  create and return a df of 1 col with the values in from of size sz,
    *  and make it the value of the given key in the kvstore */
-  DataFrame* from_array(Key* key, KSMap* kv, KChunkMap* kc, size_t sz, Array* from) {
+  DataFrame* from_array(Key* key, KDFMap* kv, KChunkMap* kc, size_t sz, Array* from) {
     Schema scm("");
     DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_(from->get_type());
@@ -154,15 +147,15 @@ class DataFrame : public Object {
     delete[] df->cols_;
     df->cols_ = cols;
 
-    kv->put(key, serialize(df));
+    //kv->put(key, serialize(df));
     return df;
   }
 
   /**
    *  Create and return a df of 1 value (scalar). Integer Version.
    *  This would be useful for storing a value such as a sum.
-   *  Also assigns the dataframe to a key in the KSMapping. */
-  DataFrame* from_scalar(Key* key, KSMap* kv, KChunkMap* kc, int val) {
+   *  Also assigns the dataframe to a key in the KDFMapping. */
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, int val) {
     Schema scm("");
     DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_('I');
@@ -176,15 +169,15 @@ class DataFrame : public Object {
     delete[] df->cols_;
     df->cols_ = cols;
 
-    kv->put(key, serialize(df));
+    //kv->put(key, serialize(df));
     return df;
   }
 
   /**
    *  Create and return a df of 1 value (scalar). Double Version.
    *  This would be useful for storing a value such as a sum.
-   *  Also assigns the dataframe to a key in the KSMapping. */
-  DataFrame* from_scalar(Key* key, KSMap* kv, KChunkMap* kc, double val) {
+   *  Also assigns the dataframe to a key in the KDFMapping. */
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, double val) {
     Schema scm("");
     DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_('D');
@@ -198,14 +191,14 @@ class DataFrame : public Object {
     delete[] df->cols_;
     df->cols_ = cols;
 
-    kv->put(key, serialize(df));
+    //kv->put(key, serialize(df));
     return df;
   }
 
   /**
    *  Create and return a df of 1 value (scalar). Boolean Version.
-   *  Also assigns the dataframe to a key in the KSMapping. */
-  DataFrame* from_scalar(Key* key, KSMap* kv, KChunkMap* kc, bool val) {
+   *  Also assigns the dataframe to a key in the KDFMapping. */
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, bool val) {
     Schema scm("");
     DataFrame* df = new DataFrame(scm, kc);
     Column* c = get_new_col_('B');
@@ -219,15 +212,15 @@ class DataFrame : public Object {
     delete[] df->cols_;
     df->cols_ = cols;
 
-    kv->put(key, serialize(df));
+    //kv->put(key, serialize(df));
     return df;
   }
 
   /**
    *  Create and return a df of 1 value (scalar). String Version.
    *  Possible uses are a concatenated String.
-   *  Also assigns the dataframe to a key in the KSMapping. */
-  DataFrame* from_scalar(Key* key, KSMap* kv, KChunkMap* kc, String* val) {
+   *  Also assigns the dataframe to a key in the KDFMapping. */
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, String* val) {
     Schema scm("");
     DataFrame* df = new DataFrame(scm, kc);
 
@@ -242,7 +235,7 @@ class DataFrame : public Object {
     delete[] df->cols_;
     df->cols_ = cols;
 
-    kv->put(key, serialize(df));
+    //kv->put(key, serialize(df));
     return df;
   }
 

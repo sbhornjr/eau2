@@ -1,10 +1,10 @@
 #include "demo.h"
+#include "map.h"
 #include "dataframe.h"
 #include "helper.h"
 #include "sorer.h"
 #include "serial.h"
 #include "message.h"
-#include "map.h"
 #include <string>
 #include <iostream>
 #include <stdlib.h>
@@ -62,17 +62,21 @@ int main(int argc, const char** argv) {
     df->add_column(sc);
     df->add_column(bc);
 
-    //delete ic;
-    //delete dc;
-    //delete sc;
-    //delete bc;
-    delete df;
-    delete kc;
-
     //for (size_t i = 0; i < df->nrows(); ++i) {
     //  cout << df->get_int(0, i) << '\t' << df->get_double(1, i) << '\t' << df->get_string(2, i)->c_str() << '\t' << df->get_bool(3, i) << endl;
     //}
 
     //Serializer s;
-    //cout << s.serialize(df) << endl;
+    const char* ser_df = df->serialize(df);
+
+    DataFrame* df2 = df->get_dataframe(ser_df);
+
+    //for (size_t i = 0; i < df2->nrows(); ++i) {
+    //  cout << df2->get_int(0, i) << '\t' << df2->get_double(1, i) << '\t' << df2->get_string(2, i)->c_str() << '\t' << df2->get_bool(3, i) << endl;
+    //}
+
+    delete df;
+    delete[] ser_df;
+    delete df2;
+    delete kc;
 }

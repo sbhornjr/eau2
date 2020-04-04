@@ -23,7 +23,7 @@ class Map: public Object {
 
 		// Destructor for Map
 		~Map() {
-			keys_->delete_all();
+			//keys_->delete_all();
 			delete keys_;
 		}
 
@@ -238,18 +238,18 @@ class KChunkMap: public Map {
  * Represents a map containing Key-SerializedDataFrames key-value pairs.
  * @authors: horn.s@husky.neu.edu, armani.a@husky.neu.edu
  */
-class KSMap: public Map {
+class KDFMap: public Map {
 	public:
 
 		StringArray* values_;
 		Serializer s;
 		KChunkMap* chunk_map;
 
-		KSMap(KChunkMap* chunk_map) : Map() {
+		KDFMap(KChunkMap* chunk_map) : Map() {
 			values_ = new StringArray();
 		}
 
-		~KSMap() {
+		~KDFMap() {
 			delete values_;
 		}
 
@@ -257,8 +257,8 @@ class KSMap: public Map {
 		 * Gets the value at a specific key.
 		 * @param key: the key whose value we want to get
 		 * @returns the value that corresponds with the given key
-		 */
-		String* get(Key* key) {
+		 *
+		DataFrame* get(Key* key) {
 			int ind = -1;
 			for (size_t i = 0; i < size_; ++i) {
 				if (key->equals(keys_->get(i))) {
@@ -269,15 +269,16 @@ class KSMap: public Map {
 			if (ind == -1) {
 				return nullptr;
 			}
-			String* df = values_->get(ind);
+			DataFrame* df = DataFrame::get_dataframe(values_->get(ind));
 			return df;
 		}
+		*/
 
 		/**
 		 * Gets the value at a specific key. Blocking.
 		 * @param key: the key whose value we want to get
 		 * @returns the value that corresponds with the given key
-		 */
+		 *
 		String* getAndWait(Key* key) {
 			int ind = -1;
 			while (ind == -1) {
@@ -291,6 +292,7 @@ class KSMap: public Map {
 			String* df = values_->get(ind);
 			return df;
 		}
+		*/
 
 		/**
 		 * Sets the value at the specified key to the value.
@@ -298,7 +300,7 @@ class KSMap: public Map {
 		 * If the key does not exist, a key-value pair is created.
 		 * @param key: the key whose value we want to set
 		 * @param value: the value we want associated with the key
-		 */
+		 *
 		void put(Key* key, String* value) {
 			for (size_t i = 0; i < size_; ++i) {
 				if (key->equals(keys_->get(i))) {
@@ -310,12 +312,13 @@ class KSMap: public Map {
 			values_->push_back(value);
 			++size_;
 		}
+		*/
 
 		/**
 		 * Removes value at the specified key and returns the removed string
 		 * @param key: the key whose value we want to remove
 		 * @returns the value that corresponds with the given key
-		 */
+		 *
 		String* remove(Key* key) {
 			int ind = -1;
 			for (size_t i = 0; i < size_; ++i) {
@@ -336,6 +339,7 @@ class KSMap: public Map {
 			delete k;
 			return df;
 		}
+		*/
 
 		/**
 		 * Gets all the keys of this map

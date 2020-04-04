@@ -164,7 +164,8 @@ public:
 
     // destructor - delete arr_ and its sub-arrays
     ~IntColumn() {
-        delete keys_;
+      keys_->delete_all();
+      delete keys_;
     }
 
     /**
@@ -316,7 +317,8 @@ public:
 
     // destructor - delete keys
     ~BoolColumn() {
-        delete keys_;
+      keys_->delete_all();
+      delete keys_;
     }
 
     /**
@@ -466,7 +468,8 @@ public:
 
     // destructor - delete arr_ and its sub-arrays
     ~DoubleColumn() {
-        delete keys_;
+      keys_->delete_all();
+      delete keys_;
     }
 
     /**
@@ -617,7 +620,8 @@ public:
 
     // destructor - delete arr_ and its sub-arrays
     ~StringColumn() {
-        delete keys_;
+      keys_->delete_all();
+      delete keys_;
     }
 
     /**
@@ -701,6 +705,12 @@ public:
 class ColumnSerializer : public Serializer {
 public:
 
+  KChunkMap* kc_;
+
+  ColumnSerializer(KChunkMap* kc) {
+    kc_ = kc;
+  }
+
   const char* serialize(Column* col) {
       ByteArray* barr = new ByteArray();
 
@@ -708,11 +718,24 @@ public:
       barr->push_string("\t\ttyp: ");
       barr->push_back((char)col->get_type());
 
+      // serialize the size
+      Serializer s;
+      barr->push_string("\n\t\tsiz: ");
+      const char* ser_siz = s.serialize(col->size_);
+      barr->push_string(ser_siz);
+      delete[] ser_siz;
+
+      // serialize the id
+      barr->push_string("\n\t\tid_: ");
+      const char* ser_id = s.serialize(col->id_);
+      barr->push_string(ser_id);
+      delete[] ser_id;
+
       // serialize the column keys
-      barr->push_string("\n\t\tkys: ");
+      barr->push_string("\n\t\tkys:\n");
       const char* ser_keys = Serializer::serialize(col->keys_);
       barr->push_string(ser_keys);
-      delete ser_keys;
+      delete[] ser_keys;
 
       const char* str = barr->as_bytes();
       delete barr;
@@ -720,7 +743,69 @@ public:
   }
 
   Column* get_column(const char* str, size_t* ii) {
-    return nullptr;
-  }
+    char type;
 
+    size_t i = 0;
+
+    // get the type of this line - should be typ
+    char type_buff[4];
+    memcpy(type_buff, &str[i], 3);
+    type_buff[3] = 0;
+
+    // first needs to be type so we know which column to create
+    if (strcmp(type_buff, "typ") != 0) return nullptr;
+
+    // get the type
+    i += 5;
+    type = str[i];
+
+    Column* col;
+
+    // create correct column
+    if (type == 'I') {
+      IntColumn* c = new IntColumn(kc_);
+      delete c->chunk_;
+      col = c;
+    }
+    else if (type == 'B') {
+      BoolColumn* c = new BoolColumn(kc_);
+      delete c->chunk_;
+      col = c;
+    }
+    else if (type == 'D') {
+      DoubleColumn* c = new DoubleColumn(kc_);
+      delete c->chunk_;
+      col = c;
+    }
+    else if (type == 'S') {
+      StringColumn* c = new StringColumn(kc_);
+      delete c->chunk_;
+      col = c;
+    }
+
+    // get size
+    Serializer s;
+    i += 4; //siz
+    size_t siz = s.get_size(&str[i], &i);
+
+    // get id
+    i += 2; // id_
+    size_t id = s.get_size(&str[i], &i);
+
+    // get keys
+    i += 2; // kys
+    KeyArray* keys = s.get_key_array(&str[i], &i);
+
+    delete col->keys_;
+    col->keys_ = keys;
+    col->id_ = id;
+    col->size_ = siz;
+    col->num_chunks_ = keys->size();
+    col->done_ = true;
+    col->chunk_no_ = -1;
+
+    (*ii) += i;
+
+    return col;
+  }
 };

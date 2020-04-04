@@ -6,6 +6,7 @@
 #include "array.h"
 #include "key.h"
 #include "thread.h"
+/*
 
 class Demo : public Application {
 public:
@@ -21,7 +22,7 @@ public:
   Key* verify = new Key(v,0);
   Key* check = new Key(c,0);
 
-  Demo(size_t idx, KSMap* kv, KChunkMap* kc): Application(idx, kv, kc) {
+  Demo(size_t idx, KDFMap* kv, KChunkMap* kc): Application(idx, kv, kc) {
     run_();
   }
 
@@ -81,7 +82,7 @@ public:
 };
 
 /** A DemoThread wraps a Thread and contains a Demo.
- *  author: armani.a@husky.neu.edu, horn.s@husky.neu.edu */
+ *  author: armani.a@husky.neu.edu, horn.s@husky.neu.edu *
 class DemoThread : public Thread {
 public:
 
@@ -89,7 +90,7 @@ public:
   Demo* d;
   size_t threadId_;
 
-  DemoThread(size_t index, size_t cur_thread, KSMap* kv, KChunkMap* kc) {
+  DemoThread(size_t index, size_t cur_thread, KDFMap* kv, KChunkMap* kc) {
     threadId_ = cur_thread;
     d = new Demo(index, kv, kc);
   }
@@ -99,3 +100,4 @@ public:
   }
 
 };
+*/
