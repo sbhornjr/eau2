@@ -145,7 +145,7 @@ public:
             // our array of size is filled - send to kv
             if (chunk_->full_) {
                 string k = to_string(id_) + "_" + to_string(curr_chunk);
-                Key* key = new Key(new String(k.c_str()), 0);
+                Key* key = new Key(new String(k.c_str()), 0, id_);
                 keys_->push_back(key);
                 kv_->put(key, chunk_);
                 ++curr_chunk;
@@ -156,7 +156,7 @@ public:
         }
         // send the last chunk
         string k = to_string(id_) + "_" + to_string(curr_chunk);
-        Key* key = new Key(new String(k.c_str()), 0);
+        Key* key = new Key(new String(k.c_str()), 0, id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
         va_end(args);
@@ -164,7 +164,7 @@ public:
 
     // destructor - delete arr_ and its sub-arrays
     ~IntColumn() {
-      keys_->delete_all();
+      kv_->kill(id_);
       delete keys_;
     }
 
@@ -209,7 +209,7 @@ public:
 
             // send chunk to kv
             string k = to_string(id_) + "_" + to_string(num_chunks_);
-            Key* key = new Key(new String(k.c_str()), 0);
+            Key* key = new Key(new String(k.c_str()), 0, id_);
             keys_->push_back(key);
             kv_->put(key, chunk_);
 
@@ -231,7 +231,7 @@ public:
     void finalize() {
         // send chunk to kv
         string k = to_string(id_) + "_" + to_string(num_chunks_);
-        Key* key = new Key(new String(k.c_str()), 0);
+        Key* key = new Key(new String(k.c_str()), 0, id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
 
@@ -298,7 +298,7 @@ public:
             // our array of size is filled - send to kv
             if (chunk_->full_) {
                 string k = to_string(id_) + "_" + to_string(curr_chunk);
-                Key* key = new Key(new String(k.c_str()), 0);
+                Key* key = new Key(new String(k.c_str()), 0, id_);
                 keys_->push_back(key);
                 kv_->put(key, chunk_);
                 ++curr_chunk;
@@ -309,7 +309,7 @@ public:
         }
         // send the last chunk
         string k = to_string(id_) + "_" + to_string(curr_chunk);
-        Key* key = new Key(new String(k.c_str()), 0);
+        Key* key = new Key(new String(k.c_str()), 0, id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
         va_end(args);
@@ -317,7 +317,7 @@ public:
 
     // destructor - delete keys
     ~BoolColumn() {
-      keys_->delete_all();
+      kv_->kill(id_);
       delete keys_;
     }
 
@@ -362,7 +362,7 @@ public:
 
             // send chunk to kv
             string k = to_string(id_) + "_" + to_string(num_chunks_);
-            Key* key = new Key(new String(k.c_str()), 0);
+            Key* key = new Key(new String(k.c_str()), 0, id_);
             keys_->push_back(key);
             kv_->put(key, chunk_);
 
@@ -384,7 +384,7 @@ public:
     void finalize() {
         // send chunk to kv
         string k = to_string(id_) + "_" + to_string(num_chunks_);
-        Key* key = new Key(new String(k.c_str()), 0);
+        Key* key = new Key(new String(k.c_str()), 0, id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
 
@@ -449,7 +449,7 @@ public:
             // our array of size is filled - send to kv
             if (chunk_->full_) {
                 string k = to_string(id_) + "_" + to_string(curr_chunk);
-                Key* key = new Key(new String(k.c_str()), 0);
+                Key* key = new Key(new String(k.c_str()), 0, id_);
                 keys_->push_back(key);
                 kv_->put(key, chunk_);
                 ++curr_chunk;
@@ -460,7 +460,7 @@ public:
         }
         // send the last chunk
         string k = to_string(id_) + "_" + to_string(curr_chunk);
-        Key* key = new Key(new String(k.c_str()), 0);
+        Key* key = new Key(new String(k.c_str()), 0, id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
         va_end(args);
@@ -468,7 +468,7 @@ public:
 
     // destructor - delete arr_ and its sub-arrays
     ~DoubleColumn() {
-      keys_->delete_all();
+      kv_->kill(id_);
       delete keys_;
     }
 
@@ -513,7 +513,7 @@ public:
 
             // send chunk to kv
             string k = to_string(id_) + "_" + to_string(num_chunks_);
-            Key* key = new Key(new String(k.c_str()), 0);
+            Key* key = new Key(new String(k.c_str()), 0, id_);
             keys_->push_back(key);
             kv_->put(key, chunk_);
 
@@ -535,7 +535,7 @@ public:
     void finalize() {
         // send chunk to kv
         string k = to_string(id_) + "_" + to_string(num_chunks_);
-        Key* key = new Key(new String(k.c_str()), 0);
+        Key* key = new Key(new String(k.c_str()), 0, id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
 
@@ -601,7 +601,7 @@ public:
             // our array of size is filled - send to kv
             if (chunk_->full_) {
                 string k = to_string(id_) + "_" + to_string(curr_chunk);
-                Key* key = new Key(new String(k.c_str()), 0);
+                Key* key = new Key(new String(k.c_str()), 0, id_);
                 keys_->push_back(key);
                 kv_->put(key, chunk_);
                 ++curr_chunk;
@@ -612,7 +612,7 @@ public:
         }
         // send the last chunk
         string k = to_string(id_) + "_" + to_string(curr_chunk);
-        Key* key = new Key(new String(k.c_str()), 0);
+        Key* key = new Key(new String(k.c_str()), 0, id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
         va_end(args);
@@ -620,7 +620,7 @@ public:
 
     // destructor - delete arr_ and its sub-arrays
     ~StringColumn() {
-      keys_->delete_all();
+      kv_->kill(id_);
       delete keys_;
     }
 
@@ -665,7 +665,7 @@ public:
 
             // send chunk to kv
             string k = to_string(id_) + "_" + to_string(num_chunks_);
-            Key* key = new Key(new String(k.c_str()), 0);
+            Key* key = new Key(new String(k.c_str()), 0, id_);
             keys_->push_back(key);
             kv_->put(key, chunk_);
 
@@ -687,7 +687,7 @@ public:
     void finalize() {
         // send chunk to kv
         string k = to_string(id_) + "_" + to_string(num_chunks_);
-        Key* key = new Key(new String(k.c_str()), 0);
+        Key* key = new Key(new String(k.c_str()), 0, id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
 

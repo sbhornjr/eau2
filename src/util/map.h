@@ -4,7 +4,10 @@
 #include "object.h"
 #include "string.h"
 #include "chunk.h"
+#include <chrono>
 #include <cstdio>
+
+using namespace std;
 
 /**
  * Represents a map containing String-Object key-value pairs.
@@ -23,7 +26,6 @@ class Map: public Object {
 
 		// Destructor for Map
 		~Map() {
-			//keys_->delete_all();
 			delete keys_;
 		}
 
@@ -126,18 +128,22 @@ class KChunkMap: public Map {
 	public:
 
 		ChunkArray* values_;
-		Serializer s;
 		size_t num_nodes;
 		size_t next_node;
 		size_t this_node;
-		size_t next_id;
+
+		KChunkMap() : Map() {
+			num_nodes = 1;
+			this_node = 0;
+			next_node = 0;
+			values_ = new ChunkArray();
+		}
 
 		KChunkMap(size_t num_nodes_, size_t this_node_) : Map() {
 			assert(num_nodes_ != 0);
 			values_ = new ChunkArray();
 			num_nodes = num_nodes_;
 			this_node = this_node_;
-			next_id = 0;
 			next_node = 0;
 		}
 
@@ -146,7 +152,18 @@ class KChunkMap: public Map {
 		}
 
 		size_t get_id() {
-			return next_id++;
+			size_t ms = chrono::duration_cast<chrono::nanoseconds>(chrono::system_clock::now().time_since_epoch()).count() % 86400000000000;
+			return ms;
+		}
+
+		void kill(size_t col_id) {
+			for (size_t i = 0; i < keys_->size(); ++i) {
+				if (keys_->get(i)->getCreatorID() == col_id) {
+					keys_->remove(i);
+					values_->remove(i);
+					--i;
+				}
+			}
 		}
 
 		/**
@@ -171,6 +188,7 @@ class KChunkMap: public Map {
 				return chunk;
 			}
 			// TODO else request from network
+			return nullptr;
 		}
 
 		/**
@@ -208,16 +226,6 @@ class KChunkMap: public Map {
 		}
 
 		/**
-		 * Removes value at the specified key and returns the removed string
-		 * @param key: the key whose value we want to remove
-		 * @returns the value that corresponds with the given key
-		 */
-		Chunk* remove(Key* key) {
-			// TODO
-			return nullptr;
-		}
-
-		/**
 		 * Gets all the keys of this map
 		 * @returns the array of keys
 		 */
@@ -230,130 +238,6 @@ class KChunkMap: public Map {
 		 * @returns the array of values
 		 */
 		ChunkArray* getValues() {
-			return values_;
-		}
-};
-
-/**
- * Represents a map containing Key-SerializedDataFrames key-value pairs.
- * @authors: horn.s@husky.neu.edu, armani.a@husky.neu.edu
- */
-class KDFMap: public Map {
-	public:
-
-		StringArray* values_;
-		Serializer s;
-		KChunkMap* chunk_map;
-
-		KDFMap(KChunkMap* chunk_map) : Map() {
-			values_ = new StringArray();
-		}
-
-		~KDFMap() {
-			delete values_;
-		}
-
-		/**
-		 * Gets the value at a specific key.
-		 * @param key: the key whose value we want to get
-		 * @returns the value that corresponds with the given key
-		 *
-		DataFrame* get(Key* key) {
-			int ind = -1;
-			for (size_t i = 0; i < size_; ++i) {
-				if (key->equals(keys_->get(i))) {
-					ind = i;
-					break;
-				}
-			}
-			if (ind == -1) {
-				return nullptr;
-			}
-			DataFrame* df = DataFrame::get_dataframe(values_->get(ind));
-			return df;
-		}
-		*/
-
-		/**
-		 * Gets the value at a specific key. Blocking.
-		 * @param key: the key whose value we want to get
-		 * @returns the value that corresponds with the given key
-		 *
-		String* getAndWait(Key* key) {
-			int ind = -1;
-			while (ind == -1) {
-				for (size_t i = 0; i < size_; ++i) {
-					if (key->equals(keys_->get(i))) {
-						ind = i;
-						break;
-					}
-				}
-			}
-			String* df = values_->get(ind);
-			return df;
-		}
-		*/
-
-		/**
-		 * Sets the value at the specified key to the value.
-		 * If the key already exists, its value is replaced.
-		 * If the key does not exist, a key-value pair is created.
-		 * @param key: the key whose value we want to set
-		 * @param value: the value we want associated with the key
-		 *
-		void put(Key* key, String* value) {
-			for (size_t i = 0; i < size_; ++i) {
-				if (key->equals(keys_->get(i))) {
-					values_->set(i, value);
-					return;
-				}
-			}
-			keys_->push_back(key);
-			values_->push_back(value);
-			++size_;
-		}
-		*/
-
-		/**
-		 * Removes value at the specified key and returns the removed string
-		 * @param key: the key whose value we want to remove
-		 * @returns the value that corresponds with the given key
-		 *
-		String* remove(Key* key) {
-			int ind = -1;
-			for (size_t i = 0; i < size_; ++i) {
-				if (key->equals(keys_->get(i))) {
-					ind = i;
-					break;
-				}
-			}
-			if (ind == -1) {
-				printf("ERROR: key not found.");
-				exit(1);
-			}
-			Key* k = keys_->get(ind);
-			String* df = values_->get(ind);
-			keys_->remove(ind);
-			values_->remove(ind);
-			--size_;
-			delete k;
-			return df;
-		}
-		*/
-
-		/**
-		 * Gets all the keys of this map
-		 * @returns the array of keys
-		 */
-		KeyArray* getKeys() {
-			return keys_;
-		}
-
-		/**
-		 * Gets all the values of this map
-		 * @returns the array of values
-		 */
-		StringArray* getValues() {
 			return values_;
 		}
 };

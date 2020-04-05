@@ -81,6 +81,7 @@ public:
 
    ~Directory() {
      delete[] ports_;
+     addresses_->delete_all();
      delete addresses_;
    }
 };
@@ -143,17 +144,17 @@ public:
 
       // call the correct sub-serializer
       if (kind == MsgKind::Register) {
-          const char* ser_reg = serialize(dynamic_cast<Register*>(msg));
+          const char* ser_reg = serialize_(dynamic_cast<Register*>(msg));
           barr->push_string(ser_reg);
           delete[] ser_reg;
       }
       else if (kind == MsgKind::Directory) {
-          const char* ser_dir = serialize(dynamic_cast<Directory*>(msg));
+          const char* ser_dir = serialize_(dynamic_cast<Directory*>(msg));
           barr->push_string(ser_dir);
           delete[] ser_dir;
       }
       else if(kind == MsgKind::Text) {
-          const char* ser_text = serialize(dynamic_cast<Text*>(msg));
+          const char* ser_text = serialize_(dynamic_cast<Text*>(msg));
           barr->push_string(ser_text);
           delete[] ser_text;
       }
@@ -246,6 +247,7 @@ public:
               const char* msg = strtok(msg_line, "\"");
               message = get_string(msg);
               i += strlen(msg) + 3;
+              delete[] msg_line;
           }
           // this is a source
           else if (strcmp(type_buff, "src") == 0) {
@@ -254,6 +256,7 @@ public:
               const char* msg = strtok(ip_line, "\"");
               src = get_string(msg);
               i += strlen(msg) + 3;
+              delete[] ip_line;
           }
       }
 
@@ -262,10 +265,12 @@ public:
                           message->c_str(), src->c_str());
 
       delete msg;
+      delete message;
+      delete src;
       return text;
   }
 
-  const char* serialize(Text* t) {
+  const char* serialize_(Text* t) {
       ByteArray* barr = new ByteArray();
 
       // serialize the message
@@ -285,7 +290,7 @@ public:
       return str;
   }
 
-  const char* serialize(Register* reg) {
+  const char* serialize_(Register* reg) {
       ByteArray* barr = new ByteArray();
 
       // sockaddr_in serialization
@@ -333,7 +338,7 @@ public:
       return reg;
   }
 
-  const char* serialize(Directory* dir) {
+  const char* serialize_(Directory* dir) {
       ByteArray* barr = new ByteArray();
 
       // serialize the number of clients
@@ -434,6 +439,7 @@ public:
 
       delete msg;
       delete[] ports;
+      sarr->delete_all();
       delete sarr;
 
       return dir;

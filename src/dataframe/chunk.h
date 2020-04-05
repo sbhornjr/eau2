@@ -280,8 +280,9 @@ public:
     void remove(size_t idx) {
         assert(idx < size_);
         if (idx == size_ - 1) {
-            arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = NULL;
+            delete arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
         } else {
+            delete arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
             for (size_t i = idx; i < size_; ++i) {
                 set(i, arr_[(i + 1) / STRING_ARR_SIZE][(i + 1) % STRING_ARR_SIZE]);
             }

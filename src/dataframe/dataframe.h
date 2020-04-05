@@ -5,12 +5,13 @@
 #include "row.h"
 #include "schema.h"
 #include "helper.h"
-
+#include "map.h"
 #include <cstdlib>
 #include "object.h"
 #include "string.h"
 #include "array.h"
-#include "map.h"
+
+class KDFMap;
 
 /****************************************************************************
  * DataFrame::
@@ -75,8 +76,6 @@ class DataFrame : public Object {
       return str;
   }
 
-  /**
-    */
   DataFrame* get_dataframe(const char* str) {
       // should only be one line, no while loop
       size_t i = 0;
@@ -103,141 +102,30 @@ class DataFrame : public Object {
   /**
    *  create and return a df of 1 col with the values in from of size sz,
    *  and make it the value of the given key in the kvstore */
-  DataFrame* from_array(Key* key, KDFMap* kv, KChunkMap* kc, size_t sz, Array* from) {
-    Schema scm("");
-    DataFrame* df = new DataFrame(scm, kc);
-    Column* c = get_new_col_(from->get_type());
-    if (from->as_int() != nullptr) {
-      IntArray* ia = from->as_int();
-      IntColumn* ic = c->as_int();
-      for (size_t i = 0; i < sz; ++i) {
-        ic->push_back(ia->get(i));
-      }
-      df->schema_->add_column('I');
-    } else if (from->as_bool() != nullptr) {
-      BoolArray* ba = from->as_bool();
-      BoolColumn* bc = c->as_bool();
-      for (size_t i = 0; i < sz; ++i) {
-        bc->push_back(ba->get(i));
-      }
-      df->schema_->add_column('B');
-    } else if (from->as_double() != nullptr) {
-      DoubleArray* da = from->as_double();
-      DoubleColumn* dc = c->as_double();
-      for (size_t i = 0; i < sz; ++i) {
-        dc->push_back(da->get(i));
-      }
-      df->schema_->add_column('D');
-    } else if (from->as_string() != nullptr) {
-      StringArray* sa = from->as_string();
-      StringColumn* sc = c->as_string();
-      for (size_t i = 0; i < sz; ++i) {
-        sc->push_back(sa->get(i));
-      }
-      df->schema_->add_column('S');
-    } else {
-      printf("creating DF from array: unknown array type, not creating DF");
-      return nullptr;
-    }
-
-    df->schema_->numrows_ = sz;
-
-    Column** cols = new Column*[1];
-    cols[0] = c;
-    delete[] df->cols_;
-    df->cols_ = cols;
-
-    //kv->put(key, serialize(df));
-    return df;
-  }
+  DataFrame* from_array(Key* key, KDFMap* kv, KChunkMap* kc, size_t sz, Array* from);
 
   /**
    *  Create and return a df of 1 value (scalar). Integer Version.
    *  This would be useful for storing a value such as a sum.
    *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, int val) {
-    Schema scm("");
-    DataFrame* df = new DataFrame(scm, kc);
-    Column* c = get_new_col_('I');
-    IntColumn* ic = c->as_int();
-    ic->push_back(val);
-    df->schema_->add_column('I');
-    df->schema_->numrows_ = 1;
-
-    Column** cols = new Column*[1];
-    cols[0] = c;
-    delete[] df->cols_;
-    df->cols_ = cols;
-
-    //kv->put(key, serialize(df));
-    return df;
-  }
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, int val);
 
   /**
    *  Create and return a df of 1 value (scalar). Double Version.
    *  This would be useful for storing a value such as a sum.
    *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, double val) {
-    Schema scm("");
-    DataFrame* df = new DataFrame(scm, kc);
-    Column* c = get_new_col_('D');
-    DoubleColumn* dc = c->as_double();
-    dc->push_back(val);
-    df->schema_->add_column('D');
-    df->schema_->numrows_ = 1;
-
-    Column** cols = new Column*[1];
-    cols[0] = c;
-    delete[] df->cols_;
-    df->cols_ = cols;
-
-    //kv->put(key, serialize(df));
-    return df;
-  }
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, double val);
 
   /**
    *  Create and return a df of 1 value (scalar). Boolean Version.
    *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, bool val) {
-    Schema scm("");
-    DataFrame* df = new DataFrame(scm, kc);
-    Column* c = get_new_col_('B');
-    BoolColumn* bc = c->as_bool();
-    bc->push_back(val);
-    df->schema_->add_column('B');
-    df->schema_->numrows_ = 1;
-
-    Column** cols = new Column*[1];
-    cols[0] = c;
-    delete[] df->cols_;
-    df->cols_ = cols;
-
-    //kv->put(key, serialize(df));
-    return df;
-  }
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, bool val);
 
   /**
    *  Create and return a df of 1 value (scalar). String Version.
    *  Possible uses are a concatenated String.
    *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, String* val) {
-    Schema scm("");
-    DataFrame* df = new DataFrame(scm, kc);
-
-    Column* c = get_new_col_('S');
-    StringColumn* sc = c->as_string();
-    sc->push_back(val);
-    df->schema_->add_column('S');
-    df->schema_->numrows_ = 1;
-
-    Column** cols = new Column*[1];
-    cols[0] = c;
-    delete[] df->cols_;
-    df->cols_ = cols;
-
-    //kv->put(key, serialize(df));
-    return df;
-  }
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, String* val);
 
   /** Returns the dataframe's schema. Modifying the schema after a dataframe
     * has been created in undefined. */
@@ -363,6 +251,7 @@ class DataFrame : public Object {
   /** Add a row at the end of this dataframe. The row is expected to have
    *  the right schema and be filled with values, otherwise undedined.  */
   void add_row(Row& row) {
+
     assert(row.schema_->equals(schema_));
     schema_->add_row();
     for (size_t i = 0; i < schema_->width(); ++i) {
@@ -380,6 +269,17 @@ class DataFrame : public Object {
         StringColumn* sc = cols_[i]->as_string();
         sc->push_back(row.get_string(i));
       }
+    }
+  }
+
+  /** finalize all columns, should be called after calling add_row many times */
+  void finalize_all() {
+    for (size_t i = 0; i < ncols(); ++i) {
+      Column* c = cols_[i];
+      if (c->type_ == 'I') c->as_int()->finalize();
+      else if (c->type_ == 'D') c->as_double()->finalize();
+      else if (c->type_ == 'B') c->as_bool()->finalize();
+      else if (c->type_ == 'S') c->as_string()->finalize();
     }
   }
 
@@ -404,10 +304,116 @@ class DataFrame : public Object {
   }
 };
 
+/**
+ * Represents a map containing Key-SerializedDataFrames key-value pairs.
+ * @authors: horn.s@husky.neu.edu, armani.a@husky.neu.edu
+ */
+class KDFMap: public Map {
+  public:
 
+    StringArray* values_;
+    Serializer s;
+    KChunkMap* chunk_map_;
+    size_t this_node_;
+    DataFrame* df_;
 
+    KDFMap(size_t this_node, KChunkMap* chunk_map) : Map() {
+      values_ = new StringArray();
+      chunk_map_ = chunk_map;
+      this_node_ = this_node;
+      Schema scm("");
+      df_ = new DataFrame(scm, chunk_map);
+    }
 
+    ~KDFMap() {
+      delete values_;
+      delete df_;
+    }
 
+    /**
+     * Gets the value at a specific key.
+     * @param key: the key whose value we want to get
+     * @returns the value that corresponds with the given key
+     */
+    DataFrame* get(Key* key) {
+      if (key->getHomeNode() == this_node_) {
+        int ind = -1;
+        for (size_t i = 0; i < size_; ++i) {
+          if (key->equals(keys_->get(i))) {
+            ind = i;
+            break;
+          }
+        }
+        if (ind == -1) {
+          return nullptr;
+        }
+        DataFrame* df = df_->get_dataframe(values_->get(ind)->c_str());
+        return df;
+      }
+      // TODO else request from network
+      return nullptr;
+    }
+
+    /**
+     * Gets the value at a specific key. Blocking.
+     * @param key: the key whose value we want to get
+     * @returns the value that corresponds with the given key
+     */
+    DataFrame* getAndWait(Key* key) {
+      // TODO
+      /**
+      int ind = -1;
+      while (ind == -1) {
+        for (size_t i = 0; i < size_; ++i) {
+          if (key->equals(keys_->get(i))) {
+            ind = i;
+            break;
+          }
+        }
+      }
+      String* df = values_->get(ind);
+      return df; */
+      return nullptr;
+    }
+
+    /**
+     * Sets the value at the specified key to the value.
+     * If the key already exists, its value is replaced.
+     * If the key does not exist, a key-value pair is created.
+     * @param key: the key whose value we want to set
+     * @param value: the value we want associated with the key
+     */
+    void put(Key* key, DataFrame* value) {
+      if (key->getHomeNode() == this_node_) {
+        for (size_t i = 0; i < size_; ++i) {
+          if (key->equals(keys_->get(i))) {
+            values_->set(i, new String(df_->serialize(value)));
+            return;
+          }
+        }
+        keys_->push_back(key);
+        values_->push_back(new String(df_->serialize(value)));
+        ++size_;
+      }
+      // TODO - send thru network
+    }
+
+    /**
+     * Gets all the keys of this map
+     * @returns the array of keys
+     */
+    KeyArray* getKeys() {
+      return keys_;
+    }
+
+    /**
+     * Gets all the values of this map
+     * @returns the array of values
+     */
+    StringArray* getValues() {
+      return values_;
+    }
+};
 
 /*************************************************************************
  * DFArray::
@@ -544,3 +550,143 @@ public:
 				return size_;
 		}
 };
+
+DataFrame* DataFrame::from_array(Key* key, KDFMap* kv, KChunkMap* kc, size_t sz, Array* from) {
+  Schema scm("");
+  DataFrame* df = new DataFrame(scm, kc);
+  Column* c = get_new_col_(from->get_type());
+  if (from->as_int() != nullptr) {
+    IntArray* ia = from->as_int();
+    IntColumn* ic = c->as_int();
+    for (size_t i = 0; i < sz; ++i) {
+      ic->push_back(ia->get(i));
+    }
+    ic->finalize();
+    df->schema_->add_column('I');
+  } else if (from->as_bool() != nullptr) {
+    BoolArray* ba = from->as_bool();
+    BoolColumn* bc = c->as_bool();
+    for (size_t i = 0; i < sz; ++i) {
+      bc->push_back(ba->get(i));
+    }
+    bc->finalize();
+    df->schema_->add_column('B');
+  } else if (from->as_double() != nullptr) {
+    DoubleArray* da = from->as_double();
+    DoubleColumn* dc = c->as_double();
+    for (size_t i = 0; i < sz; ++i) {
+      dc->push_back(da->get(i));
+    }
+    dc->finalize();
+    df->schema_->add_column('D');
+  } else if (from->as_string() != nullptr) {
+    StringArray* sa = from->as_string();
+    StringColumn* sc = c->as_string();
+    for (size_t i = 0; i < sz; ++i) {
+      sc->push_back(sa->get(i));
+    }
+    sc->finalize();
+    df->schema_->add_column('S');
+  } else {
+    printf("creating DF from array: unknown array type, not creating DF");
+    return nullptr;
+  }
+
+  df->schema_->numrows_ = sz;
+
+  Column** cols = new Column*[1];
+  cols[0] = c;
+  delete[] df->cols_;
+  df->cols_ = cols;
+
+  kv->put(key, df);
+  return df;
+}
+
+/**
+ *  Create and return a df of 1 value (scalar). Integer Version.
+ *  This would be useful for storing a value such as a sum.
+ *  Also assigns the dataframe to a key in the KDFMapping. */
+DataFrame* DataFrame::from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, int val) {
+  Schema scm("");
+  DataFrame* df = new DataFrame(scm, kc);
+  Column* c = get_new_col_('I');
+  IntColumn* ic = c->as_int();
+  ic->push_back(val);
+  df->schema_->add_column('I');
+  df->schema_->numrows_ = 1;
+
+  Column** cols = new Column*[1];
+  cols[0] = c;
+  delete[] df->cols_;
+  df->cols_ = cols;
+
+  kv->put(key, df);
+  return df;
+}
+
+/**
+ *  Create and return a df of 1 value (scalar). Double Version.
+ *  This would be useful for storing a value such as a sum.
+ *  Also assigns the dataframe to a key in the KDFMapping. */
+DataFrame* DataFrame::from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, double val) {
+  Schema scm("");
+  DataFrame* df = new DataFrame(scm, kc);
+  Column* c = get_new_col_('D');
+  DoubleColumn* dc = c->as_double();
+  dc->push_back(val);
+  df->schema_->add_column('D');
+  df->schema_->numrows_ = 1;
+
+  Column** cols = new Column*[1];
+  cols[0] = c;
+  delete[] df->cols_;
+  df->cols_ = cols;
+
+  kv->put(key, df);
+  return df;
+}
+
+/**
+ *  Create and return a df of 1 value (scalar). Boolean Version.
+ *  Also assigns the dataframe to a key in the KDFMapping. */
+DataFrame* DataFrame::from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, bool val) {
+  Schema scm("");
+  DataFrame* df = new DataFrame(scm, kc);
+  Column* c = get_new_col_('B');
+  BoolColumn* bc = c->as_bool();
+  bc->push_back(val);
+  df->schema_->add_column('B');
+  df->schema_->numrows_ = 1;
+
+  Column** cols = new Column*[1];
+  cols[0] = c;
+  delete[] df->cols_;
+  df->cols_ = cols;
+
+  kv->put(key, df);
+  return df;
+}
+
+/**
+ *  Create and return a df of 1 value (scalar). String Version.
+ *  Possible uses are a concatenated String.
+ *  Also assigns the dataframe to a key in the KDFMapping. */
+DataFrame* DataFrame::from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, String* val) {
+  Schema scm("");
+  DataFrame* df = new DataFrame(scm, kc);
+
+  Column* c = get_new_col_('S');
+  StringColumn* sc = c->as_string();
+  sc->push_back(val);
+  df->schema_->add_column('S');
+  df->schema_->numrows_ = 1;
+
+  Column** cols = new Column*[1];
+  cols[0] = c;
+  delete[] df->cols_;
+  df->cols_ = cols;
+
+  kv->put(key, df);
+  return df;
+}

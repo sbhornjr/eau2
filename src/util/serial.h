@@ -16,7 +16,7 @@ public:
 
   const char* serialize(size_t sz) {
       ByteArray* barr = new ByteArray();
-      char siz[6];
+      char siz[16];
       sprintf(siz, "%zu", sz);
       barr->push_string(siz);
       const char* str = barr->as_bytes();

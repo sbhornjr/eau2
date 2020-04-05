@@ -2,6 +2,7 @@
 //lang::Cpp
 
 #include <cstdlib>
+#include <string.h>
 #include <iostream>
 
 /** Helper class providing some C++ functionality and convenience

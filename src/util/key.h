@@ -16,10 +16,18 @@ public:
 
   String* name_;
   size_t homeNode_;
+  size_t creator_id_;
 
   Key(String* name, size_t homeNode) {
     name_ = name;
     homeNode_ = homeNode;
+    creator_id_ = 0;
+  }
+
+  Key(String* name, size_t homeNode, size_t creator_id) {
+    name_ = name;
+    homeNode_ = homeNode;
+    creator_id_ = creator_id;
   }
 
   ~Key() {
@@ -36,6 +44,11 @@ public:
     return homeNode_;
   }
 
+  // Returns the creator of this key.
+  size_t getCreatorID() {
+    return creator_id_;
+  }
+
   // Sets the name of this key to a new string.
   void setName(String* s) {
     assert(s != nullptr);
@@ -45,6 +58,11 @@ public:
   // Sets the home node of this key, if it needs to be changed for some reason.
   void setHomeNode(size_t n) {
     homeNode_ = n;
+  }
+
+  // Sets the creator id of this key, if it needs to be changed for some reason.
+  void setCreatorID(size_t n) {
+    creator_id_ = n;
   }
 
  // Compute the hash value of this key.

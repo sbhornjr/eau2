@@ -281,6 +281,7 @@ public:
      */
     DataFrame* generate_dataframe() {
         DataFrame* df = new DataFrame(*schema, kc);
+        vector<Row> validated_rows;
 
         string line;
         size_t bytes_read = 0;
@@ -452,14 +453,14 @@ public:
                     }
                 } // End creation of validated row
                 if (isValidated) {
-                    df->add_row(validated);
+                  df->add_row(validated);
                 }
             }
         } else {
             cout << "unable to open file" << endl;
             exit(1);
         }
+        df->finalize_all();
         return df;
     }
-
 };
