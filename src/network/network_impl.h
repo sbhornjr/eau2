@@ -36,25 +36,26 @@ public:
     close(sock_);
   }
 
-  Network(NodeInfo* n, size_t num_nodes, size_t this_node) {
+  Network(NodeInfo* n, sockaddr_in my_ip, size_t num_nodes, size_t this_node) {
     msg_id_ = 0;
     num_nodes_ = num_nodes;
     this_node_ = this_node;
-    ip_ = n->address;
+    ip_ = my_ip;
   }
 
   // Returns index of the node.
   virtual size_t index() { return this_node_; }
+
+  // Returns the IP of this node.
+  sockaddr_in getMyIP() { return ip_; };
 
   // Start the master node 0.
   // Receive register messages from all of the clients.
   // When you have all of them registered, you have a directory to send to the
   // clients.
   void server_init(unsigned idx, unsigned port) {
-    this_node_ = idx;
-        printf("server tried binding\n");
     init_sock_(port);
-    printf("server succeeded\n");
+    printf("Server succeeded in binding.\n");
     nodes_ = new NodeInfo[num_nodes_];
     for(size_t i = 0; i < num_nodes_; ++i) nodes_[i].id = 0;
     nodes_[0].address = ip_;
@@ -78,22 +79,19 @@ public:
     }
 
     // Send directory to all clients.
-    Directory ipd(index(), 0, msg_id_++, num_nodes_ - 1, ports, addresses);
     for (size_t i = 1; i < num_nodes_; ++i) {
-      // Reset target to actual destination.
-      ipd.target_ = i;
-      send_m(&ipd);
+      Directory* ipd = new Directory(index(), i, msg_id_++, num_nodes_ - 1, ports, addresses);
+      send_m(ipd);
       printf("Sent Directory to %zu\n", i);
+      delete ipd;
     }
   }
 
   // Initialize a client node.
   void client_init(size_t idx, size_t port, const char* server_adr,
-                   size_t server_port) {
-    this_node_ = idx;
-        printf("client %zu tried binding\n", idx);
+      size_t server_port) {
     init_sock_(port);
-            printf("client %zu succeeded\n", idx);
+    printf("Client %zu succeeded in binding.\n", idx);
     nodes_ = new NodeInfo[1];
     nodes_[0].id = 0;
     nodes_[0].address.sin_family = AF_INET;
@@ -102,12 +100,10 @@ public:
       assert(false && "Invalid server IP address format");
 
     // Send a registration message.
-    Register msg(idx, 0, msg_id_++, nodes_[0].address, port);
+    Register msg(idx, 0, msg_id_++, ip_, port);
     send_m(&msg);
-
     // Receive a directory from server node.
     Directory* ipd = dynamic_cast<Directory*>(recv_m());
-    //ipd->log(); // TODO!!!
     NodeInfo * nodes = new NodeInfo[num_nodes_];
     nodes[0] = nodes_[0];
     for (size_t i = 0; i < ipd->clients(); ++i) {
@@ -127,7 +123,6 @@ public:
 
   // Create a socket and bind it.
   void init_sock_(size_t port) {
-    std::cout << "port was" << port << endl;;
     assert((sock_ = socket(AF_INET, SOCK_STREAM, 0)) >=0);
     int opt = 1;
     assert(setsockopt(sock_,
@@ -145,17 +140,17 @@ public:
   void send_m(Message * msg) {
     NodeInfo & tgt = nodes_[msg->target()];
     int conn = socket(AF_INET, SOCK_STREAM, 0);
-    assert(conn >= 0 && "Unable to make client socket.");
+    assert(conn >= 0 && "Unable to make client socket.\n");
     if (connect(conn, (sockaddr*)&tgt.address, sizeof(tgt.address)) < 0) {
-      printf("Unable to connect to remote node.");
+      printf("Unable to connect to remote node.\n");
       exit(1); // Teardown? TODO
     }
     MessageSerializer s;
     const char* buf = s.serialize(msg);
     size_t size = strlen(buf);
+    printf("\033[0;33mSent:\n%s\033[0m\n", buf);
     send(conn, &size, sizeof(size_t), 0);
     send(conn, buf, size, 0);
-    close(conn);
   }
 
   // Listens on the socket and when a message is available - reads it.
@@ -173,8 +168,33 @@ public:
     int rd = 0;
     while (rd != size) rd += read(req, buf + rd, size - rd);
     MessageSerializer s;
+    printf("\033[0;34mReceived:\n%s\033[0m\n", buf);
     Message* msg = s.get_message(buf);
-    close(req);
     return msg;
   }
+
+/**  void begin_receiving() {
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    fd_set read_fds;
+
+    time_t since_last_msg_sent = time(NULL);
+    int status;
+
+    while(1) {
+      FD_ZERO(&read_fds);
+      FD_SET(sock_, &read_fds);
+      status = select(sock_ + 1, &read_fds, NULL, NULL, &tv);
+      if (status < 0) {
+        printf("Error in select.");
+        close(sock_);
+        exit(1);
+      }
+      for (size_t i =0; i <= sock_; ++i) {
+        recv_m();
+      }
+    }
+  }
+  **/
 };

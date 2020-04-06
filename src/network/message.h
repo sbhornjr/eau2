@@ -66,7 +66,7 @@ public:
     struct sockaddr_in client_;
     size_t port_;
 
-    Register(size_t sender, size_t target, size_t id, struct sockaddr_in client, size_t port)
+    Register(size_t sender, size_t target, size_t id, sockaddr_in client, size_t port)
     : Message(MsgKind::Register, sender, target, id), client_(client), port_(port) {}
 
     size_t port() {
@@ -112,6 +112,10 @@ public:
 
    StringArray* addresses() {
      return addresses_;
+   }
+
+   void setTarget(size_t tgt) {
+     target_ = tgt;
    }
  };
 

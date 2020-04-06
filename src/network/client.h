@@ -76,7 +76,7 @@ public:
       bind(sockfd, res->ai_addr, res->ai_addrlen);
 
       // set the socket up to listen
-      status = listen(sockfd, 10);
+      status = listen(sockfd, 100);
       if (status < 0) {
         printf("client %s: exiting - listening error\n", ip->c_str());
         teardown();

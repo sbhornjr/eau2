@@ -43,18 +43,6 @@ void milestone2() {
 }
 
 /**
-  * runs the example code given with a distributed kv store
-  
-void milestone3() {
-    KSMap* masterKV = new KSMap();
-    DemoThread d1(0, 100, masterKV);
-    DemoThread d2(1, 200, masterKV);
-    DemoThread d3(2, 300, masterKV);
-    delete masterKV;
-}*/
-
-
-/**
   * tests that key operations work as intended.
   */
 void test_key() {
@@ -300,10 +288,6 @@ int main(int argc, const char** argv) {
     cout << "\033[33mRUNNING MILESTONE 2 TESTS:\033[0m" << endl << endl;
     milestone2();
     cout << "\033[32mMilestone 2 tests successful.\033[0m" << endl << endl;
-
-    //cout << "\033[33mRUNNING MILESTONE 3 TESTS:\033[0m" << endl << endl;
-    //milestone3();
-    //cout << "\033[32mMilestone 3 tests successful.\033[0m" << endl << endl;
 
     cout << "\033[33mRUNNING KEY TESTS:\033[0m" << endl << endl;
     test_key();
