@@ -6,7 +6,6 @@
 #include "array.h"
 #include "key.h"
 #include "thread.h"
-/*
 
 class Demo : public Application {
 public:
@@ -82,7 +81,7 @@ public:
 };
 
 /** A DemoThread wraps a Thread and contains a Demo.
- *  author: armani.a@husky.neu.edu, horn.s@husky.neu.edu *
+ *  author: armani.a@husky.neu.edu, horn.s@husky.neu.edu */
 class DemoThread : public Thread {
 public:
 
@@ -100,4 +99,3 @@ public:
   }
 
 };
-*/

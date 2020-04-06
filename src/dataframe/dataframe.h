@@ -6,6 +6,7 @@
 #include "schema.h"
 #include "helper.h"
 #include "map.h"
+#include "network_impl.h"
 #include <cstdlib>
 #include "object.h"
 #include "string.h"
@@ -316,13 +317,15 @@ class KDFMap: public Map {
     KChunkMap* chunk_map_;
     size_t this_node_;
     DataFrame* df_;
+    Network* net_;
 
-    KDFMap(size_t this_node, KChunkMap* chunk_map) : Map() {
+    KDFMap(size_t this_node, KChunkMap* chunk_map, Network* net) : Map() {
       values_ = new StringArray();
       chunk_map_ = chunk_map;
       this_node_ = this_node;
       Schema scm("");
       df_ = new DataFrame(scm, chunk_map);
+      net_ = net;
     }
 
     ~KDFMap() {
@@ -351,7 +354,9 @@ class KDFMap: public Map {
         return df;
       }
       // TODO else request from network
-      return nullptr;
+      else {
+        return df_->get_dataframe(net_->get(key));
+      }
     }
 
     /**
@@ -396,6 +401,9 @@ class KDFMap: public Map {
         ++size_;
       }
       // TODO - send thru network
+      else {
+        net_->put(key, df_->serialize(value));
+      }
     }
 
     /**

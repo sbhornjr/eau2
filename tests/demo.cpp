@@ -127,27 +127,18 @@ int main(int argc, const char** argv) {
     inet_pton(AF_INET, argv[3], &my_ip.sin_addr);
     inet_pton(AF_INET, argv[5], &server_ip.sin_addr);
 
-    KChunkMap* kc = new KChunkMap(num_nodes, this_node);
-
     NodeInfo* node_info = new NodeInfo();
     node_info->id = this_node;
     node_info->address = my_ip;
     node_info->address.sin_port = htons(port);
 
-    switch (this_node) {
-      case 0:
-        producer(kc, node_info, num_nodes);
-        break;
-      case 1:
-        counter(kc, node_info, num_nodes, argv[5], server_port);
-        break;
-      case 2:
-        summarizer(kc, node_info, num_nodes, argv[5], server_port);
-        break;
-      default:
-        unspecified(this_node);
-        break;
-    }
+    NetworkThread nt(node_info, num_nodes, 100, argv[5], server_port);
+
+    KChunkMap* kc = new KChunkMap(num_nodes, this_node, nt.net_);
+    KDFMap* kv = new KDFMap(this_node, kc, nt.net_);
+
+    DemoThread dt(this_node, 200, kv, kc);
+
     delete node_info;
 
     cout << "DONE" << endl;

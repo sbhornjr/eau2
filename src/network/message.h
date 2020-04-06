@@ -126,11 +126,11 @@ public:
 
 class Get : public Message {
 public:
-    size_t idx;
+    Key* k;
 
-    Get(size_t sender, size_t target, size_t id, size_t idx_)
+    Get(size_t sender, size_t target, size_t id, Key* k)
     : Message(MsgKind::Get, sender, target, id) {
-        idx = idx_;
+        key_ = k;
     }
 };
 
@@ -154,6 +154,14 @@ public:
         key = key_;
         value = value_;
     }
+};
+
+class Reply : public Message {
+public:
+    const char* value_;
+
+    Reply(size_t sender, size_t target, size_t id, const char* value_)
+    : Message(MsgKind::Reply, sender, target, id), value_(value) {}
 };
 
 /**

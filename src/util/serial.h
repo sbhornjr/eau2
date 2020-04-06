@@ -72,7 +72,7 @@ public:
 
   struct sockaddr_in get_sockaddr_in(const char* str, size_t* i) {
       size_t port;
-      int adr;
+      const char* adr;
       size_t n = 5;
       char fam[4];
       memset(fam, 0, 4);
@@ -93,19 +93,18 @@ public:
           // this is a prt line
           else if (strcmp(type_buff, "prt") == 0) port = get_size(&str[n], &n);
           // this is a adr line
-          else if (strcmp(type_buff, "adr") == 0) adr = get_int(&str[n], &n);
+          else if (strcmp(type_buff, "adr") == 0) adr = get_adr(&str[n], &n);
           else break;
       }
 
       struct sockaddr_in addr;
-      struct in_addr inadr;
       if (strcmp(fam, "ip4") == 0) addr.sin_family = AF_INET;
       else if (strcmp(fam, "ip6") == 0) addr.sin_family = AF_INET6;
       else if (strcmp(fam, "non") == 0) addr.sin_family = AF_UNSPEC;
 
+      inet_pton(AF_INET, adr, &addr.sin_addr);
+
       addr.sin_port = port;
-      inadr.s_addr = adr;
-      addr.sin_addr = inadr;
 
       (*i) += (n - 1);
 
@@ -134,6 +133,27 @@ public:
 
   int get_int(const char* str, size_t* i) {
       return (int)get_size(str, i);
+  }
+
+  const char* get_adr(const char* str, size_t* i) {
+      size_t new_line_loc;
+      size_t n = 5;
+      const char* adr;
+      // find the end of the line
+      for (size_t j = n; str[j] != '\n' && str[j] != 0; ++j) {
+          new_line_loc = j;
+      }
+      ++new_line_loc;
+
+      // get the sender idx
+      char buff[new_line_loc - n + 1];
+      memcpy(buff, &str[n], new_line_loc - n);
+      buff[new_line_loc - n] = 0;
+      adr = buff;
+
+      (*i) += new_line_loc + 1;
+
+      return adr;
   }
 
   const char* serialize(String* str) {
