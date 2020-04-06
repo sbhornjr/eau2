@@ -6,7 +6,7 @@ build:
 	mkdir ./tests/test-data
 	cd ./src/dataframe; cp *.h ../../tests/test-data
 	cd ./src/network; cp *.h ../../tests/test-data
-	cd ./src/util; cp *.h ../../tests/test-data
+	cd ./src/kvstore; cp *.h ../../tests/test-data
 	cd ./src/app; cp *.h ../../tests/test-data
 	cd ./tests; cp main.cpp demo.cpp Makefile ./test-data
 	cd ./data; cp data.sor ../tests/test-data
@@ -21,7 +21,7 @@ test:
 	mkdir ./tests/test-data
 	cd ./src/dataframe; cp *.h ../../tests/test-data
 	cd ./src/network; cp *.h ../../tests/test-data
-	cd ./src/util; cp *.h ../../tests/test-data
+	cd ./src/kvstore; cp *.h ../../tests/test-data
 	cd ./src/app; cp *.h ../../tests/test-data
 	cd ./tests; cp main.cpp demo.cpp Makefile ./test-data
 	cd ./data; cp data.sor ../tests/test-data
@@ -36,7 +36,7 @@ valgr:
 	mkdir ./tests/test-data
 	cd ./src/dataframe; cp *.h ../../tests/test-data
 	cd ./src/network; cp *.h ../../tests/test-data
-	cd ./src/util; cp *.h ../../tests/test-data
+	cd ./src/kvstore; cp *.h ../../tests/test-data
 	cd ./src/app; cp *.h ../../tests/test-data
 	cd ./tests; cp main.cpp demo.cpp Makefile ./test-data
 	cd ./data; cp data.sor ../tests/test-data
