@@ -8,6 +8,7 @@
 #include "array.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 using namespace std;
 
@@ -56,9 +57,12 @@ public:
       else if (addr.sin_family == AF_INET6) memcpy(fam, "ip6", 3);
       else if (addr.sin_family == AF_UNSPEC) memcpy(fam, "non", 3);
 
+      char adr[INET_ADDRSTRLEN];
+      inet_ntop(AF_INET, &(addr.sin_addr), adr, INET_ADDRSTRLEN);
+
       // addr: sin_family, sin_port, sin_addr.s_addr
-      sprintf(buff, "\tfam: %s\n\tprt: %hu\n\tadr: %i",
-              fam, addr.sin_port, addr.sin_addr.s_addr);
+      sprintf(buff, "\tfam: %s\n\tprt: %hu\n\tadr: %s",
+              fam, addr.sin_port, adr);
       barr->push_string(buff);
 
       const char* str = barr->as_bytes();

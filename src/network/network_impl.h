@@ -24,11 +24,10 @@ public:
 
 class Network : public Object {
 public:
-  NodeInfo* nodes_;  // All nodes in the system.
-  size_t this_node_; // Node index of this node.
+  NodeInfo* me_;     // the node info object for me
+  NodeInfo** nodes_;  // All nodes in the system.
   int sock_;         // Socket of this node.
-  sockaddr_in ip_;   // IP address of this node.
-  size_t num_nodes_;  // Number of nodes in the network.
+  size_t num_nodes_; // Number of nodes in the network.
   size_t msg_id_;    // Unique message id that will increment each time.
 
   // Close the socket of this node when we terminate.
@@ -36,46 +35,48 @@ public:
     close(sock_);
   }
 
-  Network(NodeInfo* n, sockaddr_in my_ip, size_t num_nodes, size_t this_node) {
+  Network(NodeInfo* n, size_t num_nodes) {
+    me_ = n;
     msg_id_ = 0;
     num_nodes_ = num_nodes;
-    this_node_ = this_node;
-    ip_ = my_ip;
   }
 
   // Returns index of the node.
-  virtual size_t index() { return this_node_; }
+  size_t index() { return me_->id; }
 
   // Returns the IP of this node.
-  sockaddr_in getMyIP() { return ip_; };
+  struct sockaddr_in getMyIP() { return me_->address; };
+
+  // Returns the port of this node.
+  size_t port() { return ntohs(me_->address.sin_port); }
 
   // Start the master node 0.
   // Receive register messages from all of the clients.
   // When you have all of them registered, you have a directory to send to the
   // clients.
-  void server_init(unsigned idx, unsigned port) {
-    init_sock_(port);
+  void server_init() {
+    init_sock_();
     printf("Server succeeded in binding.\n");
-    nodes_ = new NodeInfo[num_nodes_];
-    for(size_t i = 0; i < num_nodes_; ++i) nodes_[i].id = 0;
-    nodes_[0].address = ip_;
-    nodes_[0].id = 0;
+    nodes_ = new NodeInfo*[num_nodes_];
+    nodes_[0] = me_;
+    for(size_t i = 1; i < num_nodes_; ++i) nodes_[i] = new NodeInfo(); //->id = 0;
 
     // Loop over nodes, cast their messages to registration messgaes.
-    for(size_t i = 2; i <= num_nodes_; ++i) {
+    for(size_t i = 1; i < num_nodes_; ++i) {
+      cout << "server getting register from " << ntohs(me_->address.sin_port) << endl;
       Register* msg = dynamic_cast<Register*>(recv_m());
-      nodes_[msg->sender()].id = msg->sender();
-      nodes_[msg->sender()].address.sin_family = AF_INET;
-      nodes_[msg->sender()].address.sin_addr = msg->client().sin_addr;
-      nodes_[msg->sender()].address.sin_port = htons(msg->port());
+      nodes_[msg->sender()]->id = msg->sender();
+      nodes_[msg->sender()]->address.sin_family = AF_INET;
+      nodes_[msg->sender()]->address.sin_addr = msg->client().sin_addr;
+      nodes_[msg->sender()]->address.sin_port = htons(msg->port());
     }
 
     // Create their ports and addresses to be sent off.
     size_t* ports = new size_t[num_nodes_ - 1];
     StringArray* addresses = new StringArray();
-    for (size_t i = 0; i< num_nodes_ - 1; ++i) {
-      ports[i] = ntohs(nodes_[i + 1].address.sin_port);
-      addresses->push_back(new String(inet_ntoa(nodes_[i + 1].address.sin_addr)));
+    for (size_t i = 1; i < num_nodes_; ++i) {
+      ports[i - 1] = ntohs(nodes_[i]->address.sin_port);
+      addresses->push_back(new String(inet_ntoa(nodes_[i]->address.sin_addr)));
     }
 
     // Send directory to all clients.
@@ -88,69 +89,81 @@ public:
   }
 
   // Initialize a client node.
-  void client_init(size_t idx, size_t port, const char* server_adr,
-      size_t server_port) {
-    init_sock_(port);
-    printf("Client %zu succeeded in binding.\n", idx);
-    nodes_ = new NodeInfo[1];
-    nodes_[0].id = 0;
-    nodes_[0].address.sin_family = AF_INET;
-    nodes_[0].address.sin_port = htons(server_port);
-    if(inet_pton(AF_INET,server_adr, &nodes_[0].address.sin_addr) <= 0)
+  void client_init(const char* server_adr, size_t server_port) {
+    sleep(1);
+    init_sock_();
+    printf("Client %zu succeeded in binding.\n", index());
+    nodes_ = new NodeInfo*[1];
+    nodes_[0] = new NodeInfo();
+    nodes_[0]->id = 0;
+    nodes_[0]->address.sin_family = AF_INET;
+    nodes_[0]->address.sin_port = htons(server_port);
+    if(inet_pton(AF_INET, server_adr, &nodes_[0]->address.sin_addr) <= 0)
       assert(false && "Invalid server IP address format");
 
     // Send a registration message.
-    Register msg(idx, 0, msg_id_++, ip_, port);
+    Register msg(index(), 0, msg_id_++, getMyIP(), port());
     send_m(&msg);
     // Receive a directory from server node.
     Directory* ipd = dynamic_cast<Directory*>(recv_m());
-    NodeInfo * nodes = new NodeInfo[num_nodes_];
+    NodeInfo** nodes = new NodeInfo*[num_nodes_];
     nodes[0] = nodes_[0];
     for (size_t i = 0; i < ipd->clients(); ++i) {
-      nodes[i+1].id = i+1;
-      nodes[i+1].address.sin_family = AF_INET;
-      nodes[i+1].address.sin_port = htons(ipd->ports()[i]);
+      nodes[i+1]->id = i+1;
+      nodes[i+1]->address.sin_family = AF_INET;
+      nodes[i+1]->address.sin_port = htons(ipd->ports()[i]);
       if (inet_pton(AF_INET, ipd->addresses()->get(i)->c_str(),
-                    &nodes[i+1].address.sin_addr) <= 0) {
+                    &nodes[i+1]->address.sin_addr) <= 0) {
         printf("Invalid IP directory-address found for node %zu", i+1);
         exit(1); // Teardown? TODO
       }
     }
-    delete [] nodes_;
+    delete[] nodes_;
     nodes_ = nodes; // replace the existing nodes with new nodes.
     delete ipd;
   }
 
   // Create a socket and bind it.
-  void init_sock_(size_t port) {
+  void init_sock_() {
     assert((sock_ = socket(AF_INET, SOCK_STREAM, 0)) >=0);
     int opt = 1;
+    struct sockaddr_in addr;
     assert(setsockopt(sock_,
                       SOL_SOCKET, SO_REUSEADDR,
                       &opt, sizeof(opt)) == 0);
-    ip_.sin_family = AF_INET;
-    ip_.sin_addr.s_addr = INADDR_ANY;
-    ip_.sin_port = htons(port);
-    assert(bind(sock_, (sockaddr*)&ip_, sizeof(ip_)) >= 0);
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    me_->address.sin_family = AF_INET;
+    assert(bind(sock_, (sockaddr*)&addr, sizeof(addr)) >= 0);
     assert(listen(sock_, 100) >= 0); // We can have 100 connections queued.
   }
 
   // Based on message target, create connection to appropriate server.
   // Then, serializes the message.
   void send_m(Message * msg) {
-    NodeInfo & tgt = nodes_[msg->target()];
+    MessageSerializer s;
+    NodeInfo* tgt = nodes_[msg->target()];
     int conn = socket(AF_INET, SOCK_STREAM, 0);
     assert(conn >= 0 && "Unable to make client socket.\n");
-    if (connect(conn, (sockaddr*)&tgt.address, sizeof(tgt.address)) < 0) {
+
+    char adr[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(tgt->address.sin_addr), adr, INET_ADDRSTRLEN);
+    cout << adr << endl;
+
+    cout << ntohs(tgt->address.sin_port) << endl;
+
+    if (connect(conn, (sockaddr*)&tgt->address, sizeof(tgt->address)) < 0) {
+      printf("Error conecting: %s\n", strerror( errno ) );
       printf("Unable to connect to remote node.\n");
       exit(1); // Teardown? TODO
     }
-    MessageSerializer s;
     const char* buf = s.serialize(msg);
     size_t size = strlen(buf);
     printf("\033[0;33mSent:\n%s\033[0m\n", buf);
     send(conn, &size, sizeof(size_t), 0);
     send(conn, buf, size, 0);
+    close(conn);
+    delete[] buf;
   }
 
   // Listens on the socket and when a message is available - reads it.
@@ -164,12 +177,13 @@ public:
       printf("Unable to read");
       exit(1); // Teardown? TODO
     }
-    char* buf = new char[size];
+    char buf[size];
     int rd = 0;
     while (rd != size) rd += read(req, buf + rd, size - rd);
     MessageSerializer s;
     printf("\033[0;34mReceived:\n%s\033[0m\n", buf);
     Message* msg = s.get_message(buf);
+    close(req);
     return msg;
   }
 

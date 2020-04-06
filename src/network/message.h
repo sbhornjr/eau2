@@ -9,8 +9,7 @@
 
 enum class MsgKind {Ack='a', Nack='n', Put='p',
                     Reply='r',  Get='g', WaitAndGet='w',
-                    Kill='k',   Register='t',  Directory='d',
-                    Text='x'};
+                    Kill='k',   Register='t',  Directory='d', Text='x'};
 
 class Message : public Object {
 public:

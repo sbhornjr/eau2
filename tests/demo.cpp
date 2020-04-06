@@ -22,12 +22,11 @@ Key* mainK = new Key(m,0);
 Key* verify = new Key(v,0);
 Key* check = new Key(c,0);
 
-void producer(KChunkMap* kc, NodeInfo* node_info, sockaddr_in my_ip,
-                size_t num_nodes, size_t this_node, size_t port) {
+void producer(KChunkMap* kc, NodeInfo* node_info, size_t num_nodes) {
 
     // Start network with server.
-    Network* n = new Network(node_info, my_ip, num_nodes, this_node);
-    n->server_init(this_node, port);
+    Network* n = new Network(node_info, num_nodes);
+    n->server_init();
 
 /**
     // Store sum in a variable.
@@ -64,13 +63,12 @@ void producer(KChunkMap* kc, NodeInfo* node_info, sockaddr_in my_ip,
     delete n;
 }
 
-void counter(KChunkMap* kc, NodeInfo* node_info, sockaddr_in my_ip,
-                size_t num_nodes, size_t this_node, size_t port,
+void counter(KChunkMap* kc, NodeInfo* node_info, size_t num_nodes,
                 const char* server_adr, size_t server_port) {
 
   // Start client in network.
-  Network* n = new Network(node_info, my_ip, num_nodes, this_node);
-  n->client_init(this_node, port, server_adr, server_port);
+  Network* n = new Network(node_info, num_nodes);
+  n->client_init(server_adr, server_port);
   //n->begin_receiving();
 /*
   size_t SZ = 100*1000;
@@ -87,14 +85,13 @@ void counter(KChunkMap* kc, NodeInfo* node_info, sockaddr_in my_ip,
   delete n;
 }
 
-void summarizer(KChunkMap* kc, NodeInfo* node_info, sockaddr_in my_ip,
-                size_t num_nodes, size_t this_node, size_t port,
+void summarizer(KChunkMap* kc, NodeInfo* node_info, size_t num_nodes,
                 const char* server_adr, size_t server_port) {
 
 
   // Start client in network.
-  Network* n = new Network(node_info, my_ip, num_nodes, this_node);
-  n->client_init(this_node, port, server_adr, server_port);
+  Network* n = new Network(node_info, num_nodes);
+  n->client_init(server_adr, server_port);
   //n->begin_receiving();
                   /*
   DataFrame* result = getKVStore()->getAndWait(verify);
@@ -135,20 +132,23 @@ int main(int argc, const char** argv) {
     NodeInfo* node_info = new NodeInfo();
     node_info->id = this_node;
     node_info->address = my_ip;
+    node_info->address.sin_port = htons(port);
 
     switch (this_node) {
       case 0:
-        producer(kc, node_info, my_ip, num_nodes, this_node, port);
+        producer(kc, node_info, num_nodes);
         break;
       case 1:
-        counter(kc, node_info, my_ip, num_nodes, this_node, port, argv[5], server_port);
+        counter(kc, node_info, num_nodes, argv[5], server_port);
         break;
       case 2:
-        summarizer(kc, node_info, my_ip, num_nodes, this_node, port, argv[5], server_port);
+        summarizer(kc, node_info, num_nodes, argv[5], server_port);
         break;
       default:
         unspecified(this_node);
         break;
     }
     delete node_info;
+
+    cout << "DONE" << endl;
 }
