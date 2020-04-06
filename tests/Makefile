@@ -4,7 +4,11 @@ build:
 
 test:
 	./eau2 data.sor
-	./milestone3 -num_nodes 3
+	# Running Milestone 3 Tests:
+	./milestone3 0 3 127.0.0.1 8080 127.0.0.1 8080 &
+	./milestone3 1 3 127.0.0.2 8081 127.0.0.1 8080 &
+	./milestone3 2 3 127.0.0.3 8082 127.0.0.1 8080
+	# Milestone 3 Tests Successful
 
 valgr:
 	valgrind --leak-check=full --show-leak-kinds=all ./eau2 data.sor

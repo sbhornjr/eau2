@@ -36,8 +36,11 @@ public:
     close(sock_);
   }
 
-  Network(NodeInfo* n, size_t num_nodes, size_t thisNode) {
+  Network(NodeInfo* n, size_t num_nodes, size_t this_node) {
     msg_id_ = 0;
+    num_nodes_ = num_nodes;
+    this_node_ = this_node;
+    ip_ = n->address;
   }
 
   // Returns index of the node.
@@ -49,7 +52,9 @@ public:
   // clients.
   void server_init(unsigned idx, unsigned port) {
     this_node_ = idx;
+        printf("server tried binding\n");
     init_sock_(port);
+    printf("server succeeded\n");
     nodes_ = new NodeInfo[num_nodes_];
     for(size_t i = 0; i < num_nodes_; ++i) nodes_[i].id = 0;
     nodes_[0].address = ip_;
@@ -75,17 +80,20 @@ public:
     // Send directory to all clients.
     Directory ipd(index(), 0, msg_id_++, num_nodes_ - 1, ports, addresses);
     for (size_t i = 1; i < num_nodes_; ++i) {
-      // Reset target to actual desti
+      // Reset target to actual destination.
       ipd.target_ = i;
       send_m(&ipd);
+      printf("Sent Directory to %zu\n", i);
     }
   }
 
   // Initialize a client node.
-  void client_init(size_t idx, size_t port, char* server_adr,
-                   unsigned server_port) {
+  void client_init(size_t idx, size_t port, const char* server_adr,
+                   size_t server_port) {
     this_node_ = idx;
+        printf("client %zu tried binding\n", idx);
     init_sock_(port);
+            printf("client %zu succeeded\n", idx);
     nodes_ = new NodeInfo[1];
     nodes_[0].id = 0;
     nodes_[0].address.sin_family = AF_INET;
@@ -118,7 +126,8 @@ public:
   }
 
   // Create a socket and bind it.
-  void init_sock_(unsigned port) {
+  void init_sock_(size_t port) {
+    std::cout << "port was" << port << endl;;
     assert((sock_ = socket(AF_INET, SOCK_STREAM, 0)) >=0);
     int opt = 1;
     assert(setsockopt(sock_,
