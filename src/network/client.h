@@ -30,7 +30,7 @@ public:
     size_t node_id;             // id of this node
     int servfd;                 // socket to server
     bool confirmed;             // am i registered
-    
+
 
     // constructor that takes the ip address, the port, the serverip, and
     // the amount of seconds between sending random messages

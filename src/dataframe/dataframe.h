@@ -133,7 +133,7 @@ class DataFrame : public Object {
     return *schema_;
   }
 
-  /** Adds a column this dataframe, updates the schema, the new column
+  /** Adds a column to this dataframe, updates the schema, the new column
     * is external, and appears as the last column of the dataframe.
     * A nullptr column is undefined. */
   void add_column(Column* col) {

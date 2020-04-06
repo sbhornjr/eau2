@@ -17,12 +17,12 @@ using namespace std;
 void milestone1(string filename) {
 
     KChunkMap* kc = new KChunkMap();
-    cout << "creating dataframe from file " << filename << "." << endl << endl;
+    cout << "Creating dataframe from file " << filename << "." << endl;
     Sorer s(filename, kc);
     DataFrame* df = s.generate_dataframe();
-    cout << "dataframe created." << endl << endl;
+    cout << "Dataframe created." << endl;
 
-    cout << "summing all ints in the df: "; //<< endl;
+    cout << "Summing all ints in the df: ";
     SumRower sr;
     df->map(sr);
     cout << sr.getSum() << "." << endl << endl;
@@ -44,7 +44,7 @@ void milestone2() {
 
 /**
   * runs the example code given with a distributed kv store
-  *
+  
 void milestone3() {
     KSMap* masterKV = new KSMap();
     DemoThread d1(0, 100, masterKV);

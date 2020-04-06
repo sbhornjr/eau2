@@ -2,93 +2,72 @@
 #include "map.h"
 #include "dataframe.h"
 #include "sorer.h"
-#include "serial.h"
-#include "message.h"
+#include "network_impl.h"
 #include <string>
 #include <iostream>
 #include <stdlib.h>
 
 using namespace std;
 
-int main(int argc, const char** argv) {
-    // args: 0=./demo, 1=this_node, 2=num_nodes, 3=ip, 4=port 5=server_ip
-    //if (argc != 4) {
-    //    cout << "please run ./demo [node_id] [# nodes] [node_ip] [port] [server_ip]" << endl;
-    //    exit(1);
-    //}
-    size_t this_node = stoi(argv[1]);
-    size_t num_nodes = stoi(argv[2]);
-
-    KChunkMap* kc = new KChunkMap(num_nodes, this_node);
-    IntColumn* ic = new IntColumn(kc);
-    for (size_t i = 0; i < 500 * 256; ++i) {
-      ic->push_back(i);
-    }
-    ic->finalize();
-
-    cout << "int column created" << endl;
+/**
+  * This file runs the Milestone 3 Demo with a Network Implementation.
+  */
+void producer(KChunkMap* kc) {
 
     DoubleColumn* dc = new DoubleColumn(kc);
-    for (size_t i = 500 * 256; i > 0; --i) {
+    for (size_t i = 100 * 1000; i > 0; --i) {
       dc->push_back((double)i);
     }
     dc->finalize();
+    cout << "Double column created." << endl;
 
-    cout << "double column created" << endl;
+}
 
-    StringColumn* sc = new StringColumn(kc);
-    for (size_t i = 500 * 256; i > 0; --i) {
-      sc->push_back(new String(to_string((int)i).c_str()));
+void counter(KChunkMap* kc) {
+
+}
+
+void summarizer(KChunkMap* kc) {
+
+}
+
+/**
+  * Called in the event that the correct function/job
+  * for this node could not be found.
+  */
+void unspecified(size_t num) {
+  cout << "Cannot determine what to do for this node #" + this_node << endl;
+}
+
+int main(int argc, const char** argv) {
+    // args: 0=./demo, 1=this_node, 2=num_nodes, 3=ip, 4=port 5=server_ip
+    // if (argc != 4) {
+    //    cout << "please run ./demo [node_id] [# nodes] [node_ip] [port] [server_ip]" << endl;
+    //    exit(1);
+    //}
+
+    size_t this_node = stoi(argv[1]);
+    size_t num_nodes = stoi(argv[2]);
+    sockaddr_in my_ip = stoi(argv[3]);
+    size_t port = stoi(argv[4]);
+    sockaddr_in server_ip = aton(argv[5]);
+
+    KChunkMap* kc = new KChunkMap(num_nodes, this_node);
+
+    switch (this_node) {
+      case 0: producer(kc); break;
+      case 1: counter(kc); break;
+      case 2: summarizer(kc); break;
+      default: unspecified(this_node); break;
     }
-    sc->finalize();
-
-    cout << "string column created" << endl;
-
-    BoolColumn* bc = new BoolColumn(kc);
-    bool b = false;
-    for (size_t i = 500 * 256; i > 0; --i) {
-      bc->push_back(b);
-      b = !b;
-    }
-    bc->finalize();
-
-    cout << "bool column created" << endl;
 
     Schema scm;
     DataFrame* df = new DataFrame(scm, kc);
-    df->add_column(ic);
     df->add_column(dc);
-    df->add_column(sc);
-    df->add_column(bc);
 
-    //for (size_t i = 0; i < df->nrows(); ++i) {
-    //  cout << df->get_int(0, i) << '\t' << df->get_double(1, i) << '\t' << df->get_string(2, i)->c_str() << '\t' << df->get_bool(3, i) << endl;
-    //}
-
-    //Serializer s;
     const char* ser_df = df->serialize(df);
 
-    DataFrame* df2 = df->get_dataframe(ser_df);
-
-    //for (size_t i = 0; i < df2->nrows(); ++i) {
-    //  cout << df2->get_int(0, i) << '\t' << df2->get_double(1, i) << '\t' << df2->get_string(2, i)->c_str() << '\t' << df2->get_bool(3, i) << endl;
-    //}
-
-    sc->get(0);
-    StringChunk* schunk = sc->chunk_;
-    ChunkSerializer cs;
-
-    const char* ser_chunk = cs.serialize(schunk);
-    //cout << ser_chunk << endl;
-    cs.get_chunk(ser_chunk)->as_string();
-    //for (size_t i = 0; i < schunk2->size_; ++i) {
-    //  cout << schunk2->get(i)->c_str() << endl;
-    //}
-
     delete df;
-    delete[] ser_chunk;
-    //delete schunk2;
     delete[] ser_df;
-    delete df2;
     delete kc;
 }

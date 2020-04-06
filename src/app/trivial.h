@@ -30,10 +30,10 @@ public:
 
   void run_() {
     run_int();
-    printf("trivial example for IntArray complete and successful.\n\n");
+    printf("Trivial example for IntArray complete and successful.\n");
 
     run_double();
-    printf("trivial example for DoubleArray complete and successful.\n\n");
+    printf("Trivial example for DoubleArray complete and successful.\n\n");
   }
 
   void run_int() {

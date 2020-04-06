@@ -232,7 +232,7 @@ public:
 
     /**
      * Acquire ownership for the df.
-     * replaces the Chunk* at given index with given DF*
+     * replaces the Chunk* at given index with given Chunk*
      * @param idx: the index at which to place this value
      * @param val: val to put at the index
      */

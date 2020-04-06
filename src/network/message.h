@@ -30,6 +30,14 @@ public:
     MsgKind get_kind() {
         return kind_;
     }
+
+    size_t sender() {
+      return sender_;
+    }
+
+    size_t target() {
+      return target_;
+    }
 };
 
 class Ack : public Message {
@@ -60,6 +68,14 @@ public:
 
     Register(size_t sender, size_t target, size_t id, struct sockaddr_in client, size_t port)
     : Message(MsgKind::Register, sender, target, id), client_(client), port_(port) {}
+
+    size_t port() {
+      return port_;
+    }
+
+    struct sockaddr_in client() {
+      return client_;
+    }
 };
 
 class Directory : public Message {
@@ -67,6 +83,7 @@ public:
    size_t clients_;
    size_t * ports_;  // owned
    StringArray* addresses_;  // owned; strings owned
+   size_t target_;
 
    Directory(size_t sender, size_t target, size_t id, size_t clients, size_t* ports, StringArray* addresses)
    : Message(MsgKind::Directory, sender, target, id), clients_(clients) {
@@ -84,7 +101,19 @@ public:
      addresses_->delete_all();
      delete addresses_;
    }
-};
+
+   size_t clients() {
+      return clients_;
+   }
+
+   size_t* ports() {
+     return ports_;
+   }
+
+   StringArray* addresses() {
+     return addresses_;
+   }
+ };
 
 class Kill : public Message {
 public:
