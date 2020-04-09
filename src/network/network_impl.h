@@ -240,8 +240,8 @@ public:
                 const char* server_adr, size_t server_port) {
     threadId_ = cur_thread;
     net_ = new Network(ni, num_nodes);
-    if (ni->id == 0) thread_(net_->server_init());
-    else thread_(net_->client_init(server_adr, server_port));
+    //if (ni->id == 0) thread_(net_->server_init());
+    //else thread_(net_->client_init(server_adr, server_port));
   }
 
   ~NetworkThread() {

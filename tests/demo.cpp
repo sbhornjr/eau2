@@ -12,6 +12,8 @@ using namespace std;
 /**
   * This file runs the Milestone 3 Demo with a Network Implementation.
   * The previous submission demonstrated this with a Threaded Implementation.
+  * In its current state, we were only able to get the server/client nodes
+  * initialized without linking in a KV Store.
   * @authors armani.a@husky.neu.edu, horn.s@husky.neu.edu
   */
 
@@ -134,10 +136,10 @@ int main(int argc, const char** argv) {
 
     NetworkThread nt(node_info, num_nodes, 100, argv[5], server_port);
 
-    KChunkMap* kc = new KChunkMap(num_nodes, this_node, nt.net_);
-    KDFMap* kv = new KDFMap(this_node, kc, nt.net_);
+  //  KChunkMap* kc = new KChunkMap(num_nodes, this_node);
+  //  KDFMap* kv = new KDFMap(this_node, kc);
 
-    DemoThread dt(this_node, 200, kv, kc);
+  //  DemoThread dt(this_node, 200, kv, kc);
 
     delete node_info;
 

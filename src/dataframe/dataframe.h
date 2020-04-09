@@ -5,11 +5,14 @@
 #include "row.h"
 #include "schema.h"
 #include "helper.h"
+#include "map.h"
+#include "network_impl.h"
 #include <cstdlib>
 #include "object.h"
 #include "string.h"
 #include "array.h"
-#include "KVStore.h"
+
+class KDFMap;
 
 /****************************************************************************
  * DataFrame::
@@ -23,17 +26,17 @@ class DataFrame : public Object {
 
   Column** cols_;   // column array representing the values of the DF
   Schema* schema_;  // the schema this DF conforms to
-  KVStore* kv_;     // kvstore for columns to use
+  KChunkMap* kv_;   // chunk map for columns to use
 
   /** Create a data frame with the same columns as the given df but no rows */
   DataFrame(DataFrame& df): DataFrame(*df.schema_, df.kv_) {}
 
   /** Create a data frame from a schema and columns. Results are undefined if
     * the columns do not match the schema. */
-  DataFrame(Schema& schema, KVStore* kv) {
+  DataFrame(Schema& schema, KChunkMap* kc) {
     schema_ = new Schema(schema);
     cols_ = new Column*[schema_->width()];
-    kv_ = kv;
+    kv_ = kc;
 
     // populates cols_ with empty columns
     for (size_t i = 0; i < schema_->width(); ++i) {
@@ -100,30 +103,30 @@ class DataFrame : public Object {
   /**
    *  create and return a df of 1 col with the values in from of size sz,
    *  and make it the value of the given key in the kvstore */
-  DataFrame* from_array(Key* key, KVStore* kv, size_t sz, Array* from);
+  DataFrame* from_array(Key* key, KDFMap* kv, KChunkMap* kc, size_t sz, Array* from);
 
   /**
    *  Create and return a df of 1 value (scalar). Integer Version.
    *  This would be useful for storing a value such as a sum.
    *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KVStore* kv, int val);
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, int val);
 
   /**
    *  Create and return a df of 1 value (scalar). Double Version.
    *  This would be useful for storing a value such as a sum.
    *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KVStore* kv, double val);
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, double val);
 
   /**
    *  Create and return a df of 1 value (scalar). Boolean Version.
    *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KVStore* kv, bool val);
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, bool val);
 
   /**
    *  Create and return a df of 1 value (scalar). String Version.
    *  Possible uses are a concatenated String.
    *  Also assigns the dataframe to a key in the KDFMapping. */
-  DataFrame* from_scalar(Key* key, KVStore* kv, String* val);
+  DataFrame* from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, String* val);
 
   /** Returns the dataframe's schema. Modifying the schema after a dataframe
     * has been created in undefined. */
@@ -302,6 +305,123 @@ class DataFrame : public Object {
   }
 };
 
+/**
+ * Represents a map containing Key-SerializedDataFrames key-value pairs.
+ * @authors: horn.s@husky.neu.edu, armani.a@husky.neu.edu
+ */
+class KDFMap: public Map {
+  public:
+
+    StringArray* values_;
+    Serializer s;
+    KChunkMap* chunk_map_;
+    size_t this_node_;
+    DataFrame* df_;
+
+    KDFMap(size_t this_node, KChunkMap* chunk_map) : Map() {
+      values_ = new StringArray();
+      chunk_map_ = chunk_map;
+      this_node_ = this_node;
+      Schema scm("");
+      df_ = new DataFrame(scm, chunk_map);
+    }
+
+    ~KDFMap() {
+      delete values_;
+      delete df_;
+    }
+
+    /**
+     * Gets the value at a specific key.
+     * @param key: the key whose value we want to get
+     * @returns the value that corresponds with the given key
+     */
+    DataFrame* get(Key* key) {
+      if (key->getHomeNode() == this_node_) {
+        int ind = -1;
+        for (size_t i = 0; i < size_; ++i) {
+          if (key->equals(keys_->get(i))) {
+            ind = i;
+            break;
+          }
+        }
+        if (ind == -1) {
+          return nullptr;
+        }
+        DataFrame* df = df_->get_dataframe(values_->get(ind)->c_str());
+        return df;
+      }
+      // TODO else request from network
+      else {
+        //return df_->get_dataframe(net_->get(key));
+        return nullptr;
+      }
+    }
+
+    /**
+     * Gets the value at a specific key. Blocking.
+     * @param key: the key whose value we want to get
+     * @returns the value that corresponds with the given key
+     */
+    DataFrame* getAndWait(Key* key) {
+      // TODO
+      /**
+      int ind = -1;
+      while (ind == -1) {
+        for (size_t i = 0; i < size_; ++i) {
+          if (key->equals(keys_->get(i))) {
+            ind = i;
+            break;
+          }
+        }
+      }
+      String* df = values_->get(ind);
+      return df; */
+      return nullptr;
+    }
+
+    /**
+     * Sets the value at the specified key to the value.
+     * If the key already exists, its value is replaced.
+     * If the key does not exist, a key-value pair is created.
+     * @param key: the key whose value we want to set
+     * @param value: the value we want associated with the key
+     */
+    void put(Key* key, DataFrame* value) {
+      if (key->getHomeNode() == this_node_) {
+        for (size_t i = 0; i < size_; ++i) {
+          if (key->equals(keys_->get(i))) {
+            values_->set(i, new String(df_->serialize(value)));
+            return;
+          }
+        }
+        keys_->push_back(key);
+        values_->push_back(new String(df_->serialize(value)));
+        ++size_;
+      }
+      // TODO - send thru network
+      else {
+        //net_->put(key, df_->serialize(value));
+      }
+    }
+
+    /**
+     * Gets all the keys of this map
+     * @returns the array of keys
+     */
+    KeyArray* getKeys() {
+      return keys_;
+    }
+
+    /**
+     * Gets all the values of this map
+     * @returns the array of values
+     */
+    StringArray* getValues() {
+      return values_;
+    }
+};
+
 /*************************************************************************
  * DFArray::
  * Holds DF pointers. The strings are external.  Nullptr is a valid
@@ -438,9 +558,9 @@ public:
 		}
 };
 
-DataFrame* DataFrame::from_array(Key* key, KVStore* kv, size_t sz, Array* from) {
+DataFrame* DataFrame::from_array(Key* key, KDFMap* kv, KChunkMap* kc, size_t sz, Array* from) {
   Schema scm("");
-  DataFrame* df = new DataFrame(scm, kv);
+  DataFrame* df = new DataFrame(scm, kc);
   Column* c = get_new_col_(from->get_type());
   if (from->as_int() != nullptr) {
     IntArray* ia = from->as_int();
@@ -494,9 +614,9 @@ DataFrame* DataFrame::from_array(Key* key, KVStore* kv, size_t sz, Array* from) 
  *  Create and return a df of 1 value (scalar). Integer Version.
  *  This would be useful for storing a value such as a sum.
  *  Also assigns the dataframe to a key in the KDFMapping. */
-DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, int val) {
+DataFrame* DataFrame::from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, int val) {
   Schema scm("");
-  DataFrame* df = new DataFrame(scm, kv);
+  DataFrame* df = new DataFrame(scm, kc);
   Column* c = get_new_col_('I');
   IntColumn* ic = c->as_int();
   ic->push_back(val);
@@ -516,9 +636,9 @@ DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, int val) {
  *  Create and return a df of 1 value (scalar). Double Version.
  *  This would be useful for storing a value such as a sum.
  *  Also assigns the dataframe to a key in the KDFMapping. */
-DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, double val) {
+DataFrame* DataFrame::from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, double val) {
   Schema scm("");
-  DataFrame* df = new DataFrame(scm, kv);
+  DataFrame* df = new DataFrame(scm, kc);
   Column* c = get_new_col_('D');
   DoubleColumn* dc = c->as_double();
   dc->push_back(val);
@@ -537,9 +657,9 @@ DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, double val) {
 /**
  *  Create and return a df of 1 value (scalar). Boolean Version.
  *  Also assigns the dataframe to a key in the KDFMapping. */
-DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, bool val) {
+DataFrame* DataFrame::from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, bool val) {
   Schema scm("");
-  DataFrame* df = new DataFrame(scm, kv);
+  DataFrame* df = new DataFrame(scm, kc);
   Column* c = get_new_col_('B');
   BoolColumn* bc = c->as_bool();
   bc->push_back(val);
@@ -559,9 +679,9 @@ DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, bool val) {
  *  Create and return a df of 1 value (scalar). String Version.
  *  Possible uses are a concatenated String.
  *  Also assigns the dataframe to a key in the KDFMapping. */
-DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, String* val) {
+DataFrame* DataFrame::from_scalar(Key* key, KDFMap* kv, KChunkMap* kc, String* val) {
   Schema scm("");
-  DataFrame* df = new DataFrame(scm, kv);
+  DataFrame* df = new DataFrame(scm, kc);
 
   Column* c = get_new_col_('S');
   StringColumn* sc = c->as_string();
@@ -576,58 +696,4 @@ DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, String* val) {
 
   kv->put(key, df);
   return df;
-}
-
-/**
- * Gets the dataframe at a specific key.
- * @param key: the key whose value we want to get
- * @returns the value that corresponds with the given key
- */
-DataFrame* KVStore::get_df(Key* key) {
-  Schema scm("");
-  DataFrame df_(scm, this);
-  // this chunk is stored here
-  if (key->getHomeNode() == index()) {
-    int ind = -1;
-    for (size_t i = 0; i < size_; ++i) {
-      if (key->equals(keys_->get(i))) {
-        ind = i;
-        break;
-      }
-    }
-    if (ind == -1) {
-      return nullptr;
-    }
-    DataFrame* df = df_.get_dataframe(values_->get(ind)->c_str());
-    return df;
-  }
-  // TODO else request from network
-  return nullptr;
-}
-
-/**
- * Sets the value at the specified key to the value.
- * If the key already exists, its value is replaced.
- * If the key does not exist, a key-value pair is created.
- * @param key: the key whose value we want to set
- * @param value: the value we want associated with the key
- */
-void KVStore::put(Key* key, DataFrame* value) {
-  Schema scm("");
-  DataFrame df_(scm, this);
-
-  // choose which node this chunk will go to
-  key->setHomeNode(next_node_);
-  ++next_node_;
-  if (next_node_ == num_nodes_) next_node_ = 0;
-
-  // does this chunk belong here
-  if (key->getHomeNode() == index()) {
-    // yes - add to map
-    keys_->push_back(key);
-    values_->push_back(df_.serialize(value));
-    ++size_;
-  } else {
-    // TODO: no - send to correct node
-  }
 }

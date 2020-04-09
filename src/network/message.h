@@ -5,6 +5,7 @@
 #include "string.h"
 #include "array.h"
 #include "serial.h"
+#include "key.h"
 #include <netinet/in.h>
 
 enum class MsgKind {Ack='a', Nack='n', Put='p',
@@ -126,7 +127,7 @@ public:
 
 class Get : public Message {
 public:
-    Key* k;
+    Key* key_;
 
     Get(size_t sender, size_t target, size_t id, Key* k)
     : Message(MsgKind::Get, sender, target, id) {
@@ -160,7 +161,7 @@ class Reply : public Message {
 public:
     const char* value_;
 
-    Reply(size_t sender, size_t target, size_t id, const char* value_)
+    Reply(size_t sender, size_t target, size_t id, const char* value)
     : Message(MsgKind::Reply, sender, target, id), value_(value) {}
 };
 

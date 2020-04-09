@@ -4,11 +4,16 @@
 #include "array.h"
 #include "serial.h"
 
+// Types of chunks.
 class IntChunk;
 class BoolChunk;
 class DoubleChunk;
 class StringChunk;
 
+/**
+  * A Chunk is a portion of a column.
+  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
+  */
 class Chunk : public Object {
 public:
     char type_;
@@ -30,7 +35,7 @@ public:
     // returns this Column as a StringChunk*, or nullptr if not a StringChunk*
     virtual StringChunk* as_string() {return nullptr;}
 
-    /** Return the type of this column as a char: 'S', 'B', 'I' and 'D'. */
+    /** Return the type of this Chunk as a char: 'S', 'B', 'I' and 'D'. */
     char get_type() {
         return type_;
     }
@@ -42,11 +47,17 @@ public:
         type_ = type;
     }
 
+    /** Number of values in the chunk.
+      */
     size_t size() {
         return size_;
     }
 };
 
+/**
+  * A portion of a column that holds ints.
+  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
+  */
 class IntChunk : public Chunk {
 public:
     IntArray* arr_;
@@ -75,6 +86,10 @@ public:
     virtual IntChunk* as_int() {return this;}
 };
 
+/**
+  * A portion of a column that holds bools.
+  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
+  */
 class BoolChunk : public Chunk {
 public:
     BoolArray* arr_;
@@ -103,6 +118,10 @@ public:
     virtual BoolChunk* as_bool() {return this;}
 };
 
+/**
+  *
+  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
+  */
 class DoubleChunk : public Chunk {
 public:
     DoubleArray* arr_;
@@ -131,6 +150,10 @@ public:
     virtual DoubleChunk* as_double() {return this;}
 };
 
+/**
+  * A portion of a column that holds Strings.
+  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu
+  */
 class StringChunk : public Chunk {
 public:
     StringArray* arr_;
