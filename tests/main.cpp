@@ -1,5 +1,4 @@
 #include "trivial.h"
-#include "demo.h"
 #include "dataframe.h"
 #include "row.h"
 #include "helper.h"
@@ -17,48 +16,31 @@ using namespace std;
  */
 void milestone1(string filename) {
 
-    cout << "creating dataframe from file " << filename << "." << endl << endl;
-    Sorer s(filename);
+    KChunkMap* kc = new KChunkMap();
+    cout << "Creating dataframe from file " << filename << "." << endl;
+    Sorer s(filename, kc);
     DataFrame* df = s.generate_dataframe();
-    cout << "dataframe created." << endl << endl;
+    cout << "Dataframe created." << endl;
 
-    cout << "summing all ints in the df: "; //<< endl;
+    cout << "Summing all ints in the df: ";
     SumRower sr;
     df->map(sr);
     cout << sr.getSum() << "." << endl << endl;
 
-    cout << "reversing all strings in the df." << endl << endl;
-    ReverseRower rr;
-    df->map(rr);
-
-    //Serializer serial;
-    //const char* serial_df = serial.serialize(df);
-    //cout << serial_df << endl;
-    //DataFrame* df2 = serial.get_dataframe(serial_df);
-
     delete df;
+    delete kc;
 }
 
 /**
  * tests the trivial example.
  */
 void milestone2() {
-    KDFMap* masterKV = new KDFMap();
-    Trivial t(0, masterKV);
+    KChunkMap* masterKC = new KChunkMap();
+    KDFMap* masterKV = new KDFMap(0, masterKC);
+    Trivial t(0, masterKV, masterKC);
     delete masterKV;
+    delete masterKC;
 }
-
-/**
-  * runs the example code given with a distributed kv store
-  */
-void milestone3() {
-    KDFMap* masterKV = new KDFMap();
-    DemoThread d1(0, 100, masterKV);
-    DemoThread d2(1, 200, masterKV);
-    DemoThread d3(2, 300, masterKV);
-    delete masterKV;
-}
-
 
 /**
   * tests that key operations work as intended.
@@ -73,18 +55,13 @@ void test_key() {
     assert(k->getHomeNode() == 0);
 
     cout << "Checking that we can set key values." << endl;
-    k->setName(tester2);
     k->setHomeNode(100);
-
-    assert(k->getName()->equals(tester2));
     assert(k->getHomeNode() == 100);
 
     cout << "Checking that hashing works for key values.\n\n";
     Key* k2 = new Key(tester2, 0);
     assert(k->hash() != k2->hash());
 
-    delete tester;
-    delete tester2;
     delete k;
     delete k2;
 }
@@ -104,7 +81,11 @@ void test_serial() {
     String* purple = new String("purple");
     StringArray* colors = new StringArray(5, blue, red, green, yellow, purple);
 
+    KChunkMap* kc = new KChunkMap();
     Serializer s;
+    MessageSerializer msgs;
+    ChunkSerializer chunks;
+    ColumnSerializer cols(kc);
 
     cout << "Checking serialization and deserialization of StringArray." << endl;
 
@@ -124,21 +105,12 @@ void test_serial() {
 
     cout << "Checking serialization and deserialization of Ack Message." << endl;
 
-    Ack* ack = new Ack(2, 47);
-    const char* serial_ack = s.serialize(ack);
-    Message* des_msg1 = s.get_message(serial_ack);
+    Ack* ack = new Ack(0, 2, 47);
+    const char* serial_ack = msgs.serialize(ack);
+    Message* des_msg1 = msgs.get_message(serial_ack);
     assert(des_msg1->kind_ == MsgKind::Ack);
     Ack* des_ack = dynamic_cast<Ack*>(des_msg1);
     assert(des_ack != nullptr);
-
-    cout << "Checking serialization and deserialization of Status Message." << endl;
-
-    Status* stat = new Status(2, 47, "hello to you sir");
-    const char* serial_stat = s.serialize(stat);
-    Message* des_msg2 = s.get_message(serial_stat);
-    assert(des_msg2->kind_ == MsgKind::Status);
-    Status* des_stat = dynamic_cast<Status*>(des_msg2);
-    assert(des_stat != nullptr);
 
     cout << "Checking serialization and deserialization of Register Message." << endl;
 
@@ -149,9 +121,9 @@ void test_serial() {
     addr.sin_port = 80;
     addr.sin_addr = adr;
     memset(addr.sin_zero, 0, sizeof addr.sin_zero);
-    Register* reg = new Register(2, 47, addr, 80);
-    const char* serial_reg = s.serialize(reg);
-    Message* des_msg3 = s.get_message(serial_reg);
+    Register* reg = new Register(0, 2, 47, addr, 80);
+    const char* serial_reg = msgs.serialize(reg);
+    Message* des_msg3 = msgs.get_message(serial_reg);
     assert(des_msg3->kind_ == MsgKind::Register);
     Register* des_reg = dynamic_cast<Register*>(des_msg3);
     assert(des_reg != nullptr);
@@ -163,22 +135,98 @@ void test_serial() {
         ports[i] = i + 80;
     }
     StringArray* addrs = new StringArray(4, adr1, adr2, adr3, adr4);
-    Directory* dir = new Directory(2, 47, 4, ports, addrs);
-    const char* serial_dir = s.serialize(dir);
-    Message* des_msg4 = s.get_message(serial_dir);
-
+    Directory* dir = new Directory(0, 2, 47, 4, ports, addrs);
+    const char* serial_dir = msgs.serialize(dir);
+    Message* des_msg4 = msgs.get_message(serial_dir);
     assert(des_msg4->kind_ == MsgKind::Directory);
     Directory* des_dir = dynamic_cast<Directory*>(des_msg4);
     assert(des_dir != nullptr);
 
-    cout << "Checking serialization and deserialization of Text Message." << endl << endl;
+    cout << "Checking serialization and deserialization of Text Message." << endl;
 
-    Text* text = new Text(2, 47, "hello!", "127.0.0.2");
-    const char* serial_text = s.serialize(text);
-    Message* des_msg5 = s.get_message(serial_text);
+    Text* text = new Text(0, 2, 47, "hello!", "127.0.0.2");
+    const char* serial_text = msgs.serialize(text);
+    Message* des_msg5 = msgs.get_message(serial_text);
     assert(des_msg5->kind_ == MsgKind::Text);
     Text* des_text = dynamic_cast<Text*>(des_msg5);
     assert(des_text != nullptr);
+
+    cout << "Checking serialization and deserialization of Int Chunk." << endl;
+
+    IntChunk* ichunk = new IntChunk();
+    for (size_t i = 0; i < 100 * 256; ++i) {
+      ichunk->push_back((int)i);
+    }
+    const char* serial_ichunk = chunks.serialize(ichunk);
+    Chunk* des_chunk1 = chunks.get_chunk(serial_ichunk);
+    assert(des_chunk1->type_ == 'I');
+    IntChunk* des_ichunk = des_chunk1->as_int();
+    assert(des_ichunk != nullptr);
+
+    cout << "Checking serialization and deserialization of Double Chunk." << endl;
+
+    DoubleChunk* dchunk = new DoubleChunk();
+    for (size_t i = 0; i < 100 * 256; ++i) {
+      dchunk->push_back((double)i);
+    }
+    const char* serial_dchunk = chunks.serialize(dchunk);
+    Chunk* des_chunk2 = chunks.get_chunk(serial_dchunk);
+    assert(des_chunk2->type_ == 'D');
+    DoubleChunk* des_dchunk = des_chunk2->as_double();
+    assert(des_dchunk != nullptr);
+
+    cout << "Checking serialization and deserialization of Bool Chunk." << endl;
+
+    bool b = true;
+    BoolChunk* bchunk = new BoolChunk();
+    for (size_t i = 0; i < 1024 * 256; ++i) {
+      bchunk->push_back(b);
+      b = !b;
+    }
+    const char* serial_bchunk = chunks.serialize(bchunk);
+    Chunk* des_chunk3 = chunks.get_chunk(serial_bchunk);
+    assert(des_chunk3->type_ == 'B');
+    BoolChunk* des_bchunk = des_chunk3->as_bool();
+    assert(des_bchunk != nullptr);
+
+    cout << "Checking serialization and deserialization of String Chunk." << endl;
+
+    StringChunk* schunk = new StringChunk();
+    for (size_t i = 0; i < 100 * 256; ++i) {
+      schunk->push_back(new String(to_string(i).c_str()));
+    }
+    const char* serial_schunk = chunks.serialize(schunk);
+    Chunk* des_chunk4 = chunks.get_chunk(serial_schunk);
+    assert(des_chunk4->type_ == 'S');
+    StringChunk* des_schunk = des_chunk4->as_string();
+    assert(des_schunk != nullptr);
+
+    cout << "Checking serialization and deserialization of DataFrame with each Column type." << endl << endl;
+
+    IntColumn* icol = new IntColumn(kc);
+    DoubleColumn* dcol = new DoubleColumn(kc);
+    BoolColumn* bcol = new BoolColumn(kc);
+    StringColumn* scol = new StringColumn(kc);
+    for (size_t i = 0; i < 500 * 256; ++i) {
+      icol->push_back((int)i);
+      dcol->push_back((double)i);
+      bcol->push_back(b);
+      scol->push_back(new String(to_string(i).c_str()));
+      b = !b;
+    }
+    icol->finalize();
+    dcol->finalize();
+    bcol->finalize();
+    scol->finalize();
+    Schema scm;
+    DataFrame* df = new DataFrame(scm, kc);
+    df->add_column(icol);
+    df->add_column(dcol);
+    df->add_column(bcol);
+    df->add_column(scol);
+    const char* serial_df = df->serialize(df);
+    DataFrame* df2 = df->get_dataframe(serial_df);
+    assert(df2 != nullptr);
 
     delete blue;
     delete red;
@@ -191,6 +239,7 @@ void test_serial() {
     delete adr3;
     delete adr4;
     delete[] serial_colors;
+    deserial_colors->delete_all();
     delete deserial_colors;
     delete dubs;
     delete[] serial_dubs;
@@ -198,9 +247,6 @@ void test_serial() {
     delete ack;
     delete[] serial_ack;
     delete des_msg1;
-    delete stat;
-    delete[] serial_stat;
-    delete des_msg2;
     delete reg;
     delete[] serial_reg;
     delete des_msg3;
@@ -208,6 +254,25 @@ void test_serial() {
     delete[] serial_dir;
     delete des_msg4;
     delete addrs;
+    delete text;
+    delete[] serial_text;
+    delete des_msg5;
+    delete ichunk;
+    delete[] serial_ichunk;
+    delete des_chunk1;
+    delete dchunk;
+    delete[] serial_dchunk;
+    delete des_chunk2;
+    delete bchunk;
+    delete[] serial_bchunk;
+    delete des_chunk3;
+    delete schunk;
+    delete[] serial_schunk;
+    delete des_chunk4;
+    delete df;
+    delete[] serial_df;
+    delete df2;
+    delete kc;
 }
 
 int main(int argc, const char** argv) {
@@ -223,10 +288,6 @@ int main(int argc, const char** argv) {
     cout << "\033[33mRUNNING MILESTONE 2 TESTS:\033[0m" << endl << endl;
     milestone2();
     cout << "\033[32mMilestone 2 tests successful.\033[0m" << endl << endl;
-
-    cout << "\033[33mRUNNING MILESTONE 3 TESTS:\033[0m" << endl << endl;
-    milestone3();
-    cout << "\033[32mMilestone 3 tests successful.\033[0m" << endl << endl;
 
     cout << "\033[33mRUNNING KEY TESTS:\033[0m" << endl << endl;
     test_key();

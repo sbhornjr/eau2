@@ -30,7 +30,7 @@ public:
     size_t node_id;             // id of this node
     int servfd;                 // socket to server
     bool confirmed;             // am i registered
-    
+
 
     // constructor that takes the ip address, the port, the serverip, and
     // the amount of seconds between sending random messages
@@ -76,7 +76,7 @@ public:
       bind(sockfd, res->ai_addr, res->ai_addrlen);
 
       // set the socket up to listen
-      status = listen(sockfd, 10);
+      status = listen(sockfd, 100);
       if (status < 0) {
         printf("client %s: exiting - listening error\n", ip->c_str());
         teardown();

@@ -1,8 +1,8 @@
 /**
-  An object that is part of networking infrastructure.
-  Can be extended to serve some function such as client/server.
-
-  @authors armani.a@husky.neu.edu, horn.s@husky.neu.edu
+  * An object that is part of networking infrastructure.
+  * Can be extended to serve some function such as client/server.
+  *
+  * @authors armani.a@husky.neu.edu, horn.s@husky.neu.edu
 **/
 class Socket : public Object {
 public:

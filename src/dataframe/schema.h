@@ -98,9 +98,10 @@ class Schema : public Object {
       newtypes = new String(oneChar, 1);
     } else {
       // Append the typ onto our types string.
-      size_t len = types_->size();
-      char* types = types_->c_str();
-      types[len++] = typ;
+      size_t len = types_->size() + 1;
+      char types[len + 1];
+      memcpy(types, types_->c_str(), len - 1);
+      types[len - 1] = typ;
       types[len] = '\0';
       newtypes = new String(types);
     }

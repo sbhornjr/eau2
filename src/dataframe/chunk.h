@@ -2,6 +2,7 @@
 #include "object.h"
 #include "string.h"
 #include "array.h"
+#include "serial.h"
 
 class IntChunk;
 class BoolChunk;
@@ -231,7 +232,7 @@ public:
 
     /**
      * Acquire ownership for the df.
-     * replaces the Chunk* at given index with given DF*
+     * replaces the Chunk* at given index with given Chunk*
      * @param idx: the index at which to place this value
      * @param val: val to put at the index
      */
@@ -279,8 +280,9 @@ public:
     void remove(size_t idx) {
         assert(idx < size_);
         if (idx == size_ - 1) {
-            arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE] = NULL;
+            delete arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
         } else {
+            delete arr_[idx / STRING_ARR_SIZE][idx % STRING_ARR_SIZE];
             for (size_t i = idx; i < size_; ++i) {
                 set(i, arr_[(i + 1) / STRING_ARR_SIZE][(i + 1) % STRING_ARR_SIZE]);
             }
@@ -296,4 +298,101 @@ public:
     size_t size() {
         return size_;
     }
+};
+
+
+/**
+  * Serializes Chunk types.
+  * @authors armani.a@husky.neu.edu, horn.s@husky.neu.edu
+  */
+class ChunkSerializer: public Serializer {
+public:
+
+  const char* serialize(Chunk* chunk) {
+    ByteArray* barr = new ByteArray();
+
+    // serialize the type of chunk
+    barr->push_string("typ: ");
+    char ser_type[1];
+    ser_type[0] = chunk->type_;
+    barr->push_string(ser_type);
+
+    // serialize the elements of chunk
+    const char* ser_elm;
+    if (chunk->type_ == 'I') {
+      IntChunk* ic = chunk->as_int();
+      ser_elm = Serializer::serialize(ic->arr_);
+    } else if (chunk->type_ == 'D') {
+      DoubleChunk* dc = chunk->as_double();
+      ser_elm = Serializer::serialize(dc->arr_);
+    } else if (chunk->type_ == 'B') {
+      BoolChunk* bc = chunk->as_bool();
+      ser_elm = Serializer::serialize(bc->arr_);
+    } else if (chunk->type_ == 'S') {
+      StringChunk* sc = chunk->as_string();
+      ser_elm = Serializer::serialize(sc->arr_);
+    }
+
+    barr->push_back('\n');
+    barr->push_string(ser_elm);
+    delete[] ser_elm;
+
+    const char* str = barr->as_bytes();
+    delete barr;
+    return str;
+  }
+
+  Chunk* get_chunk(const char* str) {
+    char type;
+
+    size_t i = 0;
+
+    // get the type of this line - should be typ
+    char type_buff[4];
+    memcpy(type_buff, &str[i], 3);
+    type_buff[3] = 0;
+
+    // first needs to be type so we know which column to create
+    if (strcmp(type_buff, "typ") != 0) return nullptr;
+
+    // get the type
+    i += 5;
+    type = str[i];
+    i += 2;
+
+    Serializer s;
+    Chunk* ch;
+
+    // create correct column
+    if (type == 'I') {
+      IntChunk* c = new IntChunk();
+      delete c->arr_;
+      c->arr_ = s.get_int_array(&str[i]);
+      c->size_ = c->arr_->size();
+      ch = c;
+    }
+    else if (type == 'B') {
+      BoolChunk* c = new BoolChunk();
+      delete c->arr_;
+      c->arr_ = s.get_bool_array(&str[i]);
+      c->size_ = c->arr_->size();
+      ch = c;
+    }
+    else if (type == 'D') {
+      DoubleChunk* c = new DoubleChunk();
+      delete c->arr_;
+      c->arr_ = s.get_double_array(&str[i]);
+      c->size_ = c->arr_->size();
+      ch = c;
+    }
+    else if (type == 'S') {
+      StringChunk* c = new StringChunk();
+      delete c->arr_;
+      c->arr_ = s.get_string_array(&str[i]);
+      c->size_ = c->arr_->size();
+      ch = c;
+    }
+
+    return ch;
+  }
 };

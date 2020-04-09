@@ -14,10 +14,10 @@ class Application : public Object {
 public:
     KDFMap* kv_;
     KChunkMap* kc_;
-    size_t idx;
+    size_t idx_;
 
     Application(size_t i, KDFMap* kv, KChunkMap* kc) {
-      idx = i;
+      idx_ = i;
       kv_ = kv;
       kc_ = kc;
     }
@@ -26,7 +26,7 @@ public:
 
     /** which node is this */
     size_t this_node() {
-        return idx;
+        return idx_;
     }
 
     /** getter for the KV store that this application is using **/
