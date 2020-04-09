@@ -275,6 +275,62 @@ void test_serial() {
     delete kc;
 }
 
+void test_chunk(){
+
+  ChunkSerializer chunks;
+
+  cout << "Checking operations of Int Chunk." << endl;
+  cout << "Push Back. Size. Get." << endl;
+  IntChunk* ichunk = new IntChunk();
+  for (size_t i = 0; i < 100 * 256; ++i) {
+    ichunk->push_back((int)i);
+  }
+  assert(ichunk->size() == 100*256);
+  assert(ichunk->get(1) == 1);
+  cout << "Get Type." << endl;
+  assert(ichunk->get_type() == 'I');
+
+  cout << "Checking operations of Double Chunk." << endl;
+  cout << "Push Back. Size. Get." << endl;
+  DoubleChunk* dchunk = new DoubleChunk();
+  for (size_t i = 0; i < 100 * 256; ++i) {
+    dchunk->push_back((double)i);
+  }
+  assert(dchunk->size() == 100*256);
+  assert(dchunk->get(1) == 1);
+  cout << "Get Type." << endl;
+  assert(dchunk->get_type() == 'D');
+
+  cout << "Checking operations of Bool Chunk." << endl;
+  cout << "Push Back. Size. Get." << endl;
+  bool b = true;
+  BoolChunk* bchunk = new BoolChunk();
+  for (size_t i = 0; i < 1024 * 256; ++i) {
+    bchunk->push_back(b);
+    b = !b;
+  }
+  assert(bchunk->size() == 1024*256);
+  assert(bchunk->get(1) == 0);
+  cout << "Get Type." << endl;
+  assert(bchunk->get_type() == 'B');
+
+  cout << "Checking operations of String Chunk." << endl;
+  cout << "Push Back. Size. Get." << endl;
+  StringChunk* schunk = new StringChunk();
+  for (size_t i = 0; i < 100 * 256; ++i) {
+    schunk->push_back(new String(to_string(i).c_str()));
+  }
+  assert(schunk->size() == 100*256);
+  assert(!strcmp(schunk->get(1)->c_str(), "1"));
+  cout << "Get Type." << endl << endl;
+  assert(schunk->get_type() == 'S');
+
+  delete schunk;
+  delete bchunk;
+  delete ichunk;
+  delete dchunk;
+}
+
 int main(int argc, const char** argv) {
     if (argc != 2) {
         cout << "please enter ./eau2 <filename>" << endl;
@@ -297,5 +353,8 @@ int main(int argc, const char** argv) {
     test_serial();
     cout << "\033[32mSerial tests successful.\033[0m" << endl << endl;
 
+    cout << "\033[33mRUNNING CHUNK TESTS:\033[0m" << endl << endl;
+    test_chunk();
+    cout << "\033[32mChunk tests successful.\033[0m" << endl << endl;
     return 0;
 }

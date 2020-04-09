@@ -5,6 +5,12 @@
 #include "string.h"
 #include "array.h"
 
+/**
+  * Runs the trivial milestone.
+  * Shows that a dataframe can be populated and stored in a KV store.
+  * Then that dataframe can be retrieved out of the KV store.
+  * @authors course staff, horn.s@husky.neu.edu, armani.a@husky.neu.edu
+  */
 class Trivial : public Application {
 public:
 
@@ -28,6 +34,7 @@ public:
     delete d;
   }
 
+  // Runs both the int and double array versions of the example.
   void run_() {
     run_int();
     printf("Trivial example for IntArray complete and successful.\n");
@@ -46,10 +53,12 @@ public:
       sum += vals->get(i);
     }
 
+    // Demonstrates that we can store dataframe under key (key-int).
     DataFrame* df = d->from_array(key_int, getKVStore(), kc_, SZ, vals);
 
     assert(df->get_int(0,1) == 1);
-
+    
+    // Demonstrates that we can retrieve the same dataframe from the key.
     DataFrame* df2 = getKVStore()->get(key_int);
     for (size_t i = 0; i < SZ; ++i) sum -= df2->get_int(0, i);
 
@@ -70,10 +79,12 @@ public:
       sum += vals->get(i);
     }
 
+    // Demonstrates that we can store dataframe under key (key-double).
     DataFrame* df = d->from_array(key_double, getKVStore(), kc_, SZ, vals);
 
     assert(df->get_double(0,1) == 1);
 
+    // Demonstrates that we can retrieve the same dataframe from the key.
     DataFrame* df2 = getKVStore()->get(key_double);
     for (size_t i = 0; i < SZ; ++i) sum -= df2->get_double(0, i);
 

@@ -19,10 +19,10 @@ public:
     size_t from, len;
     Schema* schema;
     vector<string> goodrows;
-    KVStore* kv;
+    KChunkMap* kc;
 
-    Sorer(string filename, KVStore* kv_)
-    : filename(filename), kv(kv_) {
+    Sorer(string filename, KChunkMap* kc_)
+    : filename(filename), kc(kc_) {
         /** set default len and from values */
         ifstream file_len (filename, ios::binary);
         streampos fsize = file_len.tellg();
@@ -35,8 +35,8 @@ public:
         find_bool_int_true_schema();
     }
 
-    Sorer(string filename, size_t from, int len, KVStore* kv_)
-    : filename(filename), from(from), len(len), kv(kv_) {
+    Sorer(string filename, size_t from, int len, KChunkMap* kc_)
+    : filename(filename), from(from), len(len), kc(kc_) {
         if (len == -1) {
             ifstream file_len (filename, ios::binary);
             streampos fsize = file_len.tellg();
@@ -280,7 +280,7 @@ public:
      * authors: horn.s@husky.neu.edu, armani.a@husky.neu.edu
      */
     DataFrame* generate_dataframe() {
-        DataFrame* df = new DataFrame(*schema, kv);
+        DataFrame* df = new DataFrame(*schema, kc);
         vector<Row> validated_rows;
 
         string line;
