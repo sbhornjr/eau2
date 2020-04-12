@@ -19,9 +19,9 @@ public:
     size_t from, len;
     Schema* schema;
     vector<string> goodrows;
-    KChunkMap* kc;
+    KVStore* kc;
 
-    Sorer(string filename, KChunkMap* kc_)
+    Sorer(string filename, KVStore* kc_)
     : filename(filename), kc(kc_) {
         /** set default len and from values */
         ifstream file_len (filename, ios::binary);
@@ -35,7 +35,7 @@ public:
         find_bool_int_true_schema();
     }
 
-    Sorer(string filename, size_t from, int len, KChunkMap* kc_)
+    Sorer(string filename, size_t from, int len, KVStore* kc_)
     : filename(filename), from(from), len(len), kc(kc_) {
         if (len == -1) {
             ifstream file_len (filename, ios::binary);

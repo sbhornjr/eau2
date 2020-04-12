@@ -348,10 +348,22 @@ class KVStore : public Object {
 
     const char* get(Key* k) {
       size_t to_node = k->getHomeNode();
-      Get g(index(), to_node, msg_id_++, k);
-      send_m(&g);
-      Reply* r = dynamic_cast<Reply*>(recv_m());
-      return r->value_;
+      // No need for networking if key is in this node.
+      if (to_node == index()) {
+        for (size_t i = 0; i < keys_->size(); i++) {
+          if (keys_->get(i)->equals(k)) {
+            return values_->get(i)->c_str();
+          }
+        }
+        return nullptr;
+      } else {
+        // Need to request from a different node.
+        Get g(index(), to_node, msg_id_++, k);
+        send_m(&g);
+        Reply* r = dynamic_cast<Reply*>(recv_m());
+              cout << "got 786" << endl;
+        return r->value_;
+      }
     }
 
   /**  void begin_receiving() {

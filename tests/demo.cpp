@@ -24,7 +24,7 @@ Key* mainK = new Key(m,0);
 Key* verify = new Key(v,0);
 Key* check = new Key(c,0);
 
-void producer(KChunkMap* kc, NodeInfo* node_info, size_t num_nodes) {
+void producer(KVStore* kc, NodeInfo* node_info, size_t num_nodes) {
 
     // Start network with server.
     Network* n = new Network(node_info, num_nodes);
@@ -65,7 +65,7 @@ void producer(KChunkMap* kc, NodeInfo* node_info, size_t num_nodes) {
     delete n;
 }
 
-void counter(KChunkMap* kc, NodeInfo* node_info, size_t num_nodes,
+void counter(KVStore* kc, NodeInfo* node_info, size_t num_nodes,
                 const char* server_adr, size_t server_port) {
 
   // Start client in network.
@@ -87,7 +87,7 @@ void counter(KChunkMap* kc, NodeInfo* node_info, size_t num_nodes,
   delete n;
 }
 
-void summarizer(KChunkMap* kc, NodeInfo* node_info, size_t num_nodes,
+void summarizer(KVStore* kc, NodeInfo* node_info, size_t num_nodes,
                 const char* server_adr, size_t server_port) {
 
 
@@ -136,7 +136,7 @@ int main(int argc, const char** argv) {
 
     NetworkThread nt(node_info, num_nodes, 100, argv[5], server_port);
 
-  //  KChunkMap* kc = new KChunkMap(num_nodes, this_node);
+  //  KVStore* kc = new KVStore(num_nodes, this_node);
   //  KDFMap* kv = new KDFMap(this_node, kc);
 
   //  DemoThread dt(this_node, 200, kv, kc);
