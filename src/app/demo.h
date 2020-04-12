@@ -7,6 +7,13 @@
 #include "key.h"
 #include "thread.h"
 
+/**
+  * Threaded network implementation of Milestone 3.
+  * Demo.cpp contains the files necessary to run the non-threaded version.
+  * Creates several keys, then checks to make sure they are present in a KeyValue Store.
+  * The KeyValue store in this instance maps keys to dataframes.
+  * @authors horn.s@husky.neu.edu, armani.a@husky.neu.edu, Course Staff (example code).
+  */
 class Demo : public Application {
 public:
 
@@ -42,6 +49,7 @@ public:
    }
   }
 
+  // Generates a Dataframe with 100*1000 elements. Sums it. Stores both in KV.
   void producer() {
     DoubleArray* vals = new DoubleArray();
     size_t SZ = 100*1000;
@@ -57,6 +65,7 @@ public:
     delete vals;
   }
 
+  // Verifies the sum and creates another dataframe holding it.
   void counter() {
     size_t SZ = 100*1000;
     DataFrame* v = getKVStore()->getAndWait(main);
@@ -71,6 +80,7 @@ public:
     df3 = df3->from_scalar(verify, getKVStore(), kc_, sum);
   }
 
+  // Checks that the original dataframe sum matches the new sum dataframe.
   void summarizer() {
     DataFrame* result = getKVStore()->getAndWait(verify);
     DataFrame* expected = getKVStore()->getAndWait(check);
@@ -81,7 +91,10 @@ public:
 };
 
 /** A DemoThread wraps a Thread and contains a Demo.
- *  author: armani.a@husky.neu.edu, horn.s@husky.neu.edu */
+ *  Necessary for the distributed portion of the KeyValue store.
+ *  One thread can insert a key into a dataframe, the other thread can check
+ *  the key is there.
+ *  @authors: armani.a@husky.neu.edu, horn.s@husky.neu.edu */
 class DemoThread : public Thread {
 public:
 

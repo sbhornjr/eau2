@@ -65,22 +65,3 @@ public:
     // Notify all threads waiting on this lock
     void notify_all() { cv_.notify_all(); }
 };
-
-/** A simple thread-safe counter. */
-class Counter : public Object {
-public:
-    std::atomic<size_t> next_;
-
-    Counter() { next_ = 0; }
-
-    size_t next() {
-        size_t r = next_++;
-        return r;
-    }
-    size_t prev() {
-        size_t r = next_--;
-        return r;
-    }
-
-    size_t current() { return next_;  }
-};

@@ -5,6 +5,12 @@
 #include "string.h"
 #include "array.h"
 
+/**
+  * Runs the trivial milestone.
+  * Shows that a dataframe can be populated and stored in a KV store.
+  * Then that dataframe can be retrieved out of the KV store.
+  * @authors course staff, horn.s@husky.neu.edu, armani.a@husky.neu.edu
+  */
 class Trivial : public Application {
 public:
 
@@ -30,6 +36,7 @@ public:
     delete d;
   }
 
+  // Runs both the int and double array versions of the example.
   void run_() {
     cout << "c" << endl;
     run_int();

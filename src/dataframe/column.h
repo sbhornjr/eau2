@@ -4,7 +4,7 @@
 
 #include "string.h"
 #include "object.h"
-#include "KVStore.h"
+#include "map.h"
 #include "key.h"
 #include "chunk.h"
 #include <math.h>
@@ -39,7 +39,7 @@ public:
     int chunk_no_;       // which chunk is the current (-1 if none)
     KeyArray* keys_;          // array of keys of chunks
     size_t num_chunks_;    // number of bool chunks in this col
-    KVStore* kv_;          // where to send chunks
+    KChunkMap* kv_;          // where to send chunks
     size_t id_;             // id of this column
 
     /** Type converters: Return same column under its actual type, or
@@ -102,7 +102,7 @@ public:
     IntChunk* chunk_;       // current chunk
 
     // default constructor - initialize as an empty IntColumn
-    IntColumn(KVStore* kv) {
+    IntColumn(KChunkMap* kv) {
         set_type_('I');
         size_ = 0;
         num_chunks_ = 0;
@@ -118,7 +118,7 @@ public:
      * @param n: number of ints in the args
      * @param ...: the ints, handled by va_list etc.
      */
-    IntColumn(KVStore* kv, int n, ...) {
+    IntColumn(KChunkMap* kv, int n, ...) {
         set_type_('I');
         done_ = true;
         kv_ = kv;
@@ -182,7 +182,7 @@ public:
         // we don't have the chunk -> get it
         } else {
             Key* k = keys_->get(idx / ARR_SIZE);
-            chunk_ = kv_->get_chunk(k)->as_int();
+            chunk_ = kv_->get(k)->as_int();
             chunk_no_ = idx / ARR_SIZE;
             return chunk_->get(idx % ARR_SIZE);
         }
@@ -255,7 +255,7 @@ public:
     BoolChunk* chunk_;       // current chunk
 
     // default constructor - initialize as an empty BoolColumn
-    BoolColumn(KVStore* kv) {
+    BoolColumn(KChunkMap* kv) {
         set_type_('B');
         size_ = 0;
         num_chunks_ = 0;
@@ -271,7 +271,7 @@ public:
      * @param n: number of bools in the args
      * @param ...: the bools, handled by va_list etc.
      */
-    BoolColumn(KVStore* kv, int n, ...) {
+    BoolColumn(KChunkMap* kv, int n, ...) {
         set_type_('B');
         done_ = true;
         kv_ = kv;
@@ -335,7 +335,7 @@ public:
         // we don't have the chunk -> get it
         } else {
             Key* k = keys_->get(idx / BOOL_ARR_SIZE);
-            chunk_ = kv_->get_chunk(k)->as_bool();
+            chunk_ = kv_->get(k)->as_bool();
             chunk_no_ = idx / BOOL_ARR_SIZE;
             return chunk_->get(idx % BOOL_ARR_SIZE);
         }
@@ -406,7 +406,7 @@ public:
     DoubleChunk* chunk_;       // current chunk
 
     // default constructor - initialize as an empty DoubleColumn
-    DoubleColumn(KVStore* kv) {
+    DoubleColumn(KChunkMap* kv) {
         set_type_('D');
         size_ = 0;
         num_chunks_ = 0;
@@ -422,7 +422,7 @@ public:
      * @param n: number of dubs in the args
      * @param ...: the dubs, handled by va_list etc.
      */
-    DoubleColumn(KVStore* kv, int n, ...) {
+    DoubleColumn(KChunkMap* kv, int n, ...) {
         set_type_('D');
         done_ = true;
         kv_ = kv;
@@ -486,7 +486,7 @@ public:
         // we don't have the chunk -> get it
         } else {
             Key* k = keys_->get(idx / ARR_SIZE);
-            chunk_ = kv_->get_chunk(k)->as_double();
+            chunk_ = kv_->get(k)->as_double();
             chunk_no_ = idx / ARR_SIZE;
             return chunk_->get(idx % ARR_SIZE);
         }
@@ -558,7 +558,7 @@ public:
     StringChunk* chunk_;       // current chunk
 
     // default constructor - initialize as an empty StringColumn
-    StringColumn(KVStore* kv) {
+    StringColumn(KChunkMap* kv) {
         set_type_('S');
         size_ = 0;
         num_chunks_ = 0;
@@ -574,7 +574,7 @@ public:
      * @param n: number of Strings in the args
      * @param ...: the Strings, handled by va_list etc.
      */
-    StringColumn(KVStore* kv, int n, ...) {
+    StringColumn(KChunkMap* kv, int n, ...) {
         set_type_('S');
         done_ = true;
         kv_ = kv;
@@ -638,7 +638,7 @@ public:
         // we don't have the chunk -> get it
         } else {
             Key* k = keys_->get(idx / STRING_ARR_SIZE);
-            chunk_ = kv_->get_chunk(k)->as_string();
+            chunk_ = kv_->get(k)->as_string();
             chunk_no_ = idx / STRING_ARR_SIZE;
             return chunk_->get(idx % STRING_ARR_SIZE);
         }
@@ -705,9 +705,9 @@ public:
 class ColumnSerializer : public Serializer {
 public:
 
-  KVStore* kc_;
+  KChunkMap* kc_;
 
-  ColumnSerializer(KVStore* kc) {
+  ColumnSerializer(KChunkMap* kc) {
     kc_ = kc;
   }
 
