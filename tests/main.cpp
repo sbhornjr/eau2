@@ -16,9 +16,9 @@ using namespace std;
  */
 void milestone1(string filename) {
 
-    KChunkMap* kc = new KChunkMap();
+    KVStore* kv = new KVStore();
     cout << "Creating dataframe from file " << filename << "." << endl;
-    Sorer s(filename, kc);
+    Sorer s(filename, kv);
     DataFrame* df = s.generate_dataframe();
     cout << "Dataframe created." << endl;
 
@@ -28,18 +28,16 @@ void milestone1(string filename) {
     cout << sr.getSum() << "." << endl << endl;
 
     delete df;
-    delete kc;
+    delete kv;
 }
 
 /**
  * tests the trivial example.
  */
 void milestone2() {
-    KChunkMap* masterKC = new KChunkMap();
-    KDFMap* masterKV = new KDFMap(0, masterKC);
-    Trivial t(0, masterKV, masterKC);
+    KVStore* masterKV = new KVStore();
+    Trivial t(0, masterKV);
     delete masterKV;
-    delete masterKC;
 }
 
 /**
@@ -81,11 +79,11 @@ void test_serial() {
     String* purple = new String("purple");
     StringArray* colors = new StringArray(5, blue, red, green, yellow, purple);
 
-    KChunkMap* kc = new KChunkMap();
+    KVStore* kv = new KVStore();
     Serializer s;
     MessageSerializer msgs;
     ChunkSerializer chunks;
-    ColumnSerializer cols(kc);
+    ColumnSerializer cols(kv);
 
     cout << "Checking serialization and deserialization of StringArray." << endl;
 
@@ -203,10 +201,10 @@ void test_serial() {
 
     cout << "Checking serialization and deserialization of DataFrame with each Column type." << endl << endl;
 
-    IntColumn* icol = new IntColumn(kc);
-    DoubleColumn* dcol = new DoubleColumn(kc);
-    BoolColumn* bcol = new BoolColumn(kc);
-    StringColumn* scol = new StringColumn(kc);
+    IntColumn* icol = new IntColumn(kv);
+    DoubleColumn* dcol = new DoubleColumn(kv);
+    BoolColumn* bcol = new BoolColumn(kv);
+    StringColumn* scol = new StringColumn(kv);
     for (size_t i = 0; i < 500 * 256; ++i) {
       icol->push_back((int)i);
       dcol->push_back((double)i);
@@ -219,7 +217,7 @@ void test_serial() {
     bcol->finalize();
     scol->finalize();
     Schema scm;
-    DataFrame* df = new DataFrame(scm, kc);
+    DataFrame* df = new DataFrame(scm, kv);
     df->add_column(icol);
     df->add_column(dcol);
     df->add_column(bcol);
@@ -272,7 +270,7 @@ void test_serial() {
     delete df;
     delete[] serial_df;
     delete df2;
-    delete kc;
+    delete kv;
 }
 
 int main(int argc, const char** argv) {

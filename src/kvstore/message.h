@@ -126,11 +126,11 @@ public:
 
 class Get : public Message {
 public:
-    Key* k;
+    Key* k_;
 
     Get(size_t sender, size_t target, size_t id, Key* k)
     : Message(MsgKind::Get, sender, target, id) {
-        key_ = k;
+        k_ = k;
     }
 };
 
@@ -160,7 +160,7 @@ class Reply : public Message {
 public:
     const char* value_;
 
-    Reply(size_t sender, size_t target, size_t id, const char* value_)
+    Reply(size_t sender, size_t target, size_t id, const char* value)
     : Message(MsgKind::Reply, sender, target, id), value_(value) {}
 };
 

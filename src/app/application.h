@@ -1,7 +1,7 @@
 #pragma once
 
 #include "object.h"
-#include "map.h"
+#include "kvstore.h"
 
 /**
   * Extendable class that represents the application as a whole.
@@ -12,14 +12,12 @@
   */
 class Application : public Object {
 public:
-    KDFMap* kv_;
-    KChunkMap* kc_;
+    KVStore* kv_;
     size_t idx_;
 
-    Application(size_t i, KDFMap* kv, KChunkMap* kc) {
+    Application(size_t i, KVStore* kv) {
       idx_ = i;
       kv_ = kv;
-      kc_ = kc;
     }
 
     virtual void run_() {}
@@ -30,7 +28,7 @@ public:
     }
 
     /** getter for the KV store that this application is using **/
-    KDFMap* getKVStore() {
+    KVStore* getKVStore() {
       return kv_;
     }
 };

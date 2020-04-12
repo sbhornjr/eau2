@@ -47,7 +47,6 @@ class KVStore : public Object {
 
     NodeInfo** nodes_;  // All nodes in the system.
     int sock_;         // Socket of this node.
-    size_t num_nodes_; // Number of nodes in the network.
     size_t msg_id_;    // Unique message id that will increment each time.
 
 		KVStore() {
@@ -56,10 +55,15 @@ class KVStore : public Object {
       num_nodes_ = 1;
 			next_node_ = 0;
 			values_ = new StringArray();
+      NodeInfo* ni = new NodeInfo();
+      ni->id = 0;
+      me_ = ni;
 		}
 
-    KVStore(NodeInfo* n, size_t num_nodes, size_t this_node) {
+    KVStore(NodeInfo* n, size_t num_nodes, size_t this_node,
+            const char* server_adr, size_t server_port) {
 			assert(num_nodes_ != 0);
+      keys_ = new KeyArray();
 			values_ = new StringArray();
 			num_nodes_ = num_nodes;
 			next_node_ = 0;
@@ -68,13 +72,14 @@ class KVStore : public Object {
       msg_id_ = 0;
 
       if (n->id == 0) server_init();
-      else client_init();
+      else client_init(server_adr, server_port);
 		}
 
 		// Destructor for Map
 		~KVStore() {
 			delete keys_;
       delete values_;
+      delete me_;
 		}
 
     /** MAP FUNCTIONALITY **/
@@ -153,12 +158,11 @@ class KVStore : public Object {
 			key->setHomeNode(next_node_);
 			++next_node_;
 			if (next_node_ == num_nodes_) next_node_ = 0;
-
 			// does this chunk belong here
 			if (key->getHomeNode() == index()) {
 				// yes - add to map
 				keys_->push_back(key);
-				values_->push_back(cs_.serialize(value));
+				values_->push_back(new String(cs_.serialize(value)));
 				++size_;
 			} else {
 				// TODO: no - send to correct node
@@ -240,9 +244,10 @@ class KVStore : public Object {
     }
 
     // Initialize a client node.
-    void client_init(NodeInfo* server_info) {
+    void client_init(const char* server_adr, size_t server_port) {
       sleep(1);
       init_sock_();
+
       printf("Client %zu succeeded in binding.\n", index());
       nodes_ = new NodeInfo*[1];
       nodes_[0] = new NodeInfo();

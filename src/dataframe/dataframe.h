@@ -502,6 +502,7 @@ DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, int val) {
   ic->push_back(val);
   df->schema_->add_column('I');
   df->schema_->numrows_ = 1;
+  ic->finalize();
 
   Column** cols = new Column*[1];
   cols[0] = c;
@@ -524,6 +525,7 @@ DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, double val) {
   dc->push_back(val);
   df->schema_->add_column('D');
   df->schema_->numrows_ = 1;
+  dc->finalize();
 
   Column** cols = new Column*[1];
   cols[0] = c;
@@ -545,6 +547,7 @@ DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, bool val) {
   bc->push_back(val);
   df->schema_->add_column('B');
   df->schema_->numrows_ = 1;
+  bc->finalize();
 
   Column** cols = new Column*[1];
   cols[0] = c;
@@ -568,6 +571,7 @@ DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, String* val) {
   sc->push_back(val);
   df->schema_->add_column('S');
   df->schema_->numrows_ = 1;
+  sc->finalize();
 
   Column** cols = new Column*[1];
   cols[0] = c;
@@ -625,7 +629,7 @@ void KVStore::put(Key* key, DataFrame* value) {
   if (key->getHomeNode() == index()) {
     // yes - add to map
     keys_->push_back(key);
-    values_->push_back(df_.serialize(value));
+    values_->push_back(new String(df_.serialize(value)));
     ++size_;
   } else {
     // TODO: no - send to correct node
