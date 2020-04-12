@@ -5,13 +5,8 @@ build:
 	- rm -rf ./tests/test-data
 	mkdir ./tests/test-data
 	cd ./src/dataframe; cp *.h ../../tests/test-data
-<<<<<<< HEAD
 	cd ./src/util; cp *.h ../../tests/test-data
 	cd ./src/kvstore; cp *.h ../../tests/test-data
-=======
-	cd ./src/network; cp *.h ../../tests/test-data
-	cd ./src/util; cp *.h ../../tests/test-data
->>>>>>> 7ea48566a1f605ec8121d62db403f9f24fbf64ff
 	cd ./src/app; cp *.h ../../tests/test-data
 	cd ./tests; cp main.cpp Makefile ./test-data
 	cd ./data; cp data.sor ../tests/test-data
@@ -25,13 +20,8 @@ test:
 	- rm -rf ./tests/test-data
 	mkdir ./tests/test-data
 	cd ./src/dataframe; cp *.h ../../tests/test-data
-<<<<<<< HEAD
 	cd ./src/util; cp *.h ../../tests/test-data
 	cd ./src/kvstore; cp *.h ../../tests/test-data
-=======
-	cd ./src/network; cp *.h ../../tests/test-data
-	cd ./src/util; cp *.h ../../tests/test-data
->>>>>>> 7ea48566a1f605ec8121d62db403f9f24fbf64ff
 	cd ./src/app; cp *.h ../../tests/test-data
 	cd ./tests; cp main.cpp Makefile ./test-data
 	cd ./data; cp data.sor ../tests/test-data
@@ -45,13 +35,8 @@ valgr:
 	- rm -rf ./tests/test-data
 	mkdir ./tests/test-data
 	cd ./src/dataframe; cp *.h ../../tests/test-data
-<<<<<<< HEAD
 	cd ./src/util; cp *.h ../../tests/test-data
 	cd ./src/kvstore; cp *.h ../../tests/test-data
-=======
-	cd ./src/network; cp *.h ../../tests/test-data
-	cd ./src/util; cp *.h ../../tests/test-data
->>>>>>> 7ea48566a1f605ec8121d62db403f9f24fbf64ff
 	cd ./src/app; cp *.h ../../tests/test-data
 	cd ./tests; cp main.cpp Makefile ./test-data
 	cd ./data; cp data.sor ../tests/test-data
