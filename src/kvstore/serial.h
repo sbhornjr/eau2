@@ -148,26 +148,6 @@ public:
       return (int)get_size(str, i);
   }
 
-  // deserializes a const char* at end of str
-  const char* get_chars(const char* str, size_t* i) {
-      size_t new_line_loc, sz;
-      size_t n = 5;
-      // find the end of the line
-      for (size_t j = n; str[j] != 0; ++j) {
-          new_line_loc = j;
-      }
-      ++new_line_loc;
-
-      // get the sender idx
-      char buff[new_line_loc - n + 1];
-      memcpy(buff, &str[n], new_line_loc - n);
-      buff[new_line_loc - n] = 0;
-
-      (*i) += new_line_loc + 1;
-
-      return buff;
-  }
-
   // Deserializes an address.
   const char* get_adr(const char* str, size_t* i) {
       size_t new_line_loc;
