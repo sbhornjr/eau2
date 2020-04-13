@@ -34,19 +34,12 @@ public:
 
   // Serializes a double.
   const char* serialize(double d) {
-      cout << "DOUBLE FAIL" << endl;
       ByteArray* barr = new ByteArray();
       char dbl[16];
-      cout << "DOUBLE FAIL 1" << endl;
       sprintf(dbl, "%f", d);
-      cout << "DOUBLE FAIL 2" << endl;
       barr->push_string(dbl);
-      cout << "DOUBLE FAIL 3" << endl;
       const char* str = barr->as_bytes();
-      cout << "DOUBLE FAIL 4" << endl;
       delete barr;
-      cout << "DOUBLE FAIL 5" << endl;
-
       return str;
   }
 
@@ -282,8 +275,6 @@ public:
 
   // Converts a Double array into its char* equivalent.
   const char* serialize(DoubleArray* darr) {
-    cout << "FAILED HERE DoubleArray" << endl;
-
       ByteArray* barr = new ByteArray();
 
       // serialize size
@@ -292,37 +283,19 @@ public:
       barr->push_string(ser_sz);
       delete[] ser_sz;
 
-
-
       // serialize array
       barr->push_string("\narr: ");
-      cout << "FAILED HERE da1" << darr->size() << endl;
-
       for (size_t i = 0; i < darr->size() - 1; ++i) {
-        cout << "FAILED HERE da11 " << i << endl;
-
           const char* ser_dbl = serialize(darr->get(i));
-          cout << "FAILED HERE da123 " << endl;
-
           barr->push_string(ser_dbl);
-          cout << "FAILED HERE da1234 " << endl;
-
           barr->push_string(", ");
-          cout << "FAILED HERE da12345 " << endl;
-
           delete[] ser_dbl;
       }
-
-      cout << "FAILED HERE da2" << endl;
-
 
       // add last element of array
       const char* ser_dbl = serialize(darr->get(darr->size() - 1));
       barr->push_string(ser_dbl);
       delete[] ser_dbl;
-
-      cout << "FAILED HERE da3" << endl;
-
 
       const char* str = barr->as_bytes();
       delete barr;
@@ -616,7 +589,7 @@ public:
     memcpy(buff, &str[i], new_line_loc - i - 1);
     buff[new_line_loc - i - 1] = 0;
 
-    Key* k = new Key(new String(buff), nde);
+    Key* k = new Key(new String(buff), (int)nde);
 
     (*ii) += new_line_loc + 1;
 

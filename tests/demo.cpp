@@ -19,9 +19,9 @@ using namespace std;
 String* m = new String("main");
 String* v = new String("verif");
 String* c = new String("ck");
-Key* mainK = new Key(m,0);
-Key* verify = new Key(v,0);
-Key* check = new Key(c,0);
+Key* mainK = new Key(m,(int)0);
+Key* verify = new Key(v,(int)0);
+Key* check = new Key(c,(int)0);
 
 
 // Variable declarations (to avoid passing many parameters around)
@@ -40,7 +40,7 @@ void producer() {
 
   // Store sum in a variable.
   double sum = 0;
-  double SZ = 100 * 1000;
+  double SZ = 10 * 10;
 
   // Create Double Column
   DoubleColumn* dc = new DoubleColumn(kv);
@@ -74,7 +74,6 @@ void producer() {
 
   cout << "Ran Producer D" << endl;
 
-
   // Put serialized DF's into the KV store.
   const char* ser_df = df->serialize(df);
   const char* ser_df2 = df2->serialize(df2);
@@ -82,6 +81,11 @@ void producer() {
   kv->put(check, ser_df2);
 
   cout << "Ran Producer E" << endl;
+
+  // make sure all nodes are dead
+  while (kv->get_num_dead() != num_nodes - 1) {
+    continue;
+  }
 
   delete df;
   delete df2;
@@ -95,17 +99,13 @@ void producer() {
 void counter() {
   cout << "Ran Counter" << endl;
 
-  size_t SZ = 100 * 1000;
+  size_t SZ = 10 * 10;
   double sum = 0;
 
   cout << "\033[0;31mRan Counter A\033[0m" << endl;
 
   // Grab dataframe belonging to mainK and do another summation.
-  const char* res = kv->getAndWait(mainK);
-
-  cout << "\033[0;31mRan Counter AB!!!\033[0m" << endl;
-
-  DataFrame* v = v->get_dataframe(res);
+  DataFrame* v = kv->getAndWait(mainK);
 
   cout << "\033[0;31mRan Counter ABC!!!\033[0m" << endl;
 
@@ -137,20 +137,24 @@ void counter() {
   delete df3;
   delete kv;
   cout << "Finished Counter" << endl;
+
+  kv->teardown();
 }
 
 void summarizer() {
   cout << "Ran Summarizer" << endl;
 
   // Pull out two dataframes from the KV.
-  DataFrame* result = result->get_dataframe(kv->getAndWait(verify));
-  DataFrame* expected = expected->get_dataframe(kv->getAndWait(check));
+  DataFrame* result = kv->getAndWait(verify);
+  DataFrame* expected = kv->getAndWait(check);
   printf(expected->get_double(0,0)==result->get_double(0,0) ? "SUCCESS\n":"FAILURE\n");
 
   delete result;
   delete expected;
   delete kv;
   cout << "Finished Summarizer, Press Ctrl-C" << endl;
+
+  kv->teardown();
 }
 
 void run(size_t this_node) {
@@ -184,6 +188,8 @@ int main(int argc, const char** argv) {
     kv = new KVStore(node_info, num_nodes, this_node, server_ip_str, server_port);
     NetworkThread n1(kv);
     run(this_node);
+
+    cout << " *****************OUT OF RUN******************* " << endl;
 
     n1.join();
     cout << "DONE" << endl;

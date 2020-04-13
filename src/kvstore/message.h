@@ -146,6 +146,10 @@ public:
     : Message(MsgKind::WaitAndGet, sender, target, id) {
         k_ = k;
     }
+
+    Key* get_key() {
+      return k_;
+    }
 };
 
 class Put : public Message {
@@ -170,10 +174,11 @@ public:
 
 class Reply : public Message {
 public:
+    bool had_it_;
     const char* value_;
 
-    Reply(size_t sender, size_t target, size_t id, const char* value)
-    : Message(MsgKind::Reply, sender, target, id), value_(value) {}
+    Reply(size_t sender, size_t target, size_t id, const char* value, bool had)
+    : Message(MsgKind::Reply, sender, target, id), had_it_(had), value_(value) {}
 };
 
 /**
@@ -570,6 +575,11 @@ public:
   const char* serialize_(Reply* r) {
       ByteArray* barr = new ByteArray();
 
+      // serialize the bool
+      barr->push_string("\nhad: ");
+      if (r->had_it_) barr->push_back('1');
+      else barr->push_back('0');
+
       // serialize the value
       barr->push_string("\nval: ");
       barr->push_string(r->value_);
@@ -635,7 +645,6 @@ public:
       // go through lines of str
       size_t i = 0;
       Key* k;
-      //const char* val;
       while (i < strlen(str)) {
           // get the type of this line
           char type_buff[4];
@@ -661,8 +670,28 @@ public:
   Message* get_reply_(const char* str, Message* msg) {
       assert(msg->kind_ == MsgKind::Reply);
 
+      size_t i = 0;
+      bool had_it;
+      while (i < strlen(str)) {
+          // get the type of this line
+          char type_buff[4];
+          memcpy(type_buff, &str[i], 3);
+          type_buff[3] = 0;
+          // this is a message line
+          if (strcmp(type_buff, "had") == 0) {
+              i += 5;
+              if (str[i] == '1') had_it = true;
+              else had_it = false;
+              i += 2;
+          }
+          else if (strcmp(type_buff, "val") == 0) {
+            i += 5;
+          }
+          else break;
+      }
+
       // Make reply Object
-      Reply* r = new Reply(msg->sender_, msg->target_, msg->id_, &str[5]);
+      Reply* r = new Reply(msg->sender_, msg->target_, msg->id_, &str[i], had_it);
 
       return r;
   }

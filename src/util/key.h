@@ -15,18 +15,24 @@ class Key : public Object {
 public:
 
   String* name_;
-  size_t homeNode_;
+  int homeNode_;
   size_t creator_id_;
 
-  Key(String* name, size_t homeNode) {
+  Key(String* name) {
+    name_ = name;
+    homeNode_ = -1;
+    creator_id_ = 0;
+  }
+
+  Key(String* name, int homeNode) {
     name_ = name;
     homeNode_ = homeNode;
     creator_id_ = 0;
   }
 
-  Key(String* name, size_t homeNode, size_t creator_id) {
+  Key(String* name, size_t creator_id) {
     name_ = name;
-    homeNode_ = homeNode;
+    homeNode_ = -1;
     creator_id_ = creator_id;
   }
 
@@ -40,7 +46,7 @@ public:
   }
 
   // Returns the home node of this key.
-  size_t getHomeNode() {
+  int getHomeNode() {
     return homeNode_;
   }
 

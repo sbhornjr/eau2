@@ -47,6 +47,7 @@ class KVStore : public Object {
     NodeInfo** nodes_;  // All nodes in the system.
     int sock_;         // Socket of this node.
     size_t msg_id_;    // Unique message id that will increment each time.
+    size_t num_dead_;  // number of nodes that have turned off
 
 		KVStore() {
 			keys_ = new KeyArray();
@@ -66,6 +67,7 @@ class KVStore : public Object {
 			values_ = new StringArray();
 			num_nodes_ = num_nodes;
 			next_node_ = 0;
+      num_dead_ = 0;
 
       me_ = n;
       msg_id_ = 0;
@@ -114,7 +116,7 @@ class KVStore : public Object {
 		 */
 		Chunk* get_chunk(Key* key) {
 			// this chunk is stored here
-			if (key->getHomeNode() == index()) {
+			if (key->getHomeNode() == (int)index()) {
 				int ind = -1;
 				for (size_t i = 0; i < size_; ++i) {
 					if (key->equals(keys_->get(i))) {
@@ -127,9 +129,12 @@ class KVStore : public Object {
 				}
 				Chunk* chunk = cs_.get_chunk(values_->get(ind)->c_str());
 				return chunk;
-			}
-			// TODO else request from network
-			return nullptr;
+			} else {
+        Get g(index(), key->getHomeNode(), msg_id_++, key);
+        send_m(&g);
+        Reply* r = dynamic_cast<Reply*>(recv_m());
+        return cs_.get_chunk(r->value_);
+      }
 		}
 
     /**
@@ -137,37 +142,14 @@ class KVStore : public Object {
 		 * @param key: the key whose value we want to get
 		 * @returns the value that corresponds with the given key
 		 */
-		DataFrame* get_df(Key* key);
+		DataFrame* get(Key* key);
 
 		/**
 		 * Gets the value at a specific key. Blocking.
 		 * @param key: the key whose value we want to get
 		 * @returns the serialized value that corresponds with the given key
 		 */
-		const char* getAndWait(Key* k) {
-      printf("GET AND WAIT CALLED by %zu\n", index());
-      size_t to_node = k->getHomeNode();
-      bool found = false;
-      // No need for networking if key is in this node.
-      if (to_node == index()) {
-        while(!found) {
-          for (size_t i = 0; i < keys_->size(); i++) {
-            if (keys_->get(i)->equals(k)) {
-              found = true;
-              return values_->get(i)->c_str();
-              printf("GET AND WAIT RETURNED FOR %zu\n", index());
-            }
-          }
-        }
-      } else {
-        // Need to request from a different node.
-        // TODO FIX BLOCKING
-          Get g(index(), to_node, msg_id_++, k);
-          send_m(&g);
-          Reply* r = dynamic_cast<Reply*>(recv_m());
-          return r->value_;
-      }
-		}
+		DataFrame* getAndWait(Key* k);
 
 		/**
 		 * Sets the value at the specified key to the value.
@@ -177,33 +159,26 @@ class KVStore : public Object {
 		 * @param value: the value we want associated with the key
 		 */
 		void put(Key* key, Chunk* value) {
-
-      cout << "FAILED HERE 1" << endl;
 			// choose which node this chunk will go to
-			key->setHomeNode(get_next_node());
-			++next_node_;
+      if (key->getHomeNode() == -1) {
+			  key->setHomeNode(get_next_node());
+  			++next_node_;
+      }
 
 			if (next_node_ >= num_nodes_) next_node_ = 0;
 			// does this chunk belong here
-			if (key->getHomeNode() == index()) {
+			if (key->getHomeNode() == (int)index()) {
 				// yes - add to map
 				keys_->push_back(key);
-        cout << "FAILED HERE 3" << endl;
-
-        String* s =new String(cs_.serialize(value));
-        cout << "FAILED HERE 4" << endl;
-
+        String* s = new String(cs_.serialize(value));
 				values_->push_back(s);
 
 				++size_;
 			} else {
-        cout << "FAILED HERE 2" << endl;
         Put p(index(), key->getHomeNode(), msg_id_++, key, cs_.serialize(value));
         send_m(&p);
 			}
 		}
-
-
 
     /**
 		 * Sets the value at the specified key to the value.
@@ -249,7 +224,7 @@ class KVStore : public Object {
       init_sock_();
       nodes_ = new NodeInfo*[num_nodes_];
       nodes_[0] = me_;
-      for(size_t i = 1; i < num_nodes_; ++i) nodes_[i] = new NodeInfo(); //->id = 0;
+      for(size_t i = 1; i < num_nodes_; ++i) nodes_[i] = new NodeInfo();
 
       // Loop over nodes, cast their messages to registration messgaes.
       for(size_t i = 1; i < num_nodes_; ++i) {
@@ -344,12 +319,14 @@ class KVStore : public Object {
       if (connect(conn, (sockaddr*)&tgt->address, sizeof(tgt->address)) < 0) {
         printf("Error conecting: %s\n", strerror( errno ) );
         printf("Unable to connect to remote node.\n");
+        cout << index() << ' ' << msg->target_ << ' ' << (char)msg->get_kind() << endl;
         exit(1); // Teardown? TODO
       }
       const char* buf = s.serialize(msg);
       size_t size = strlen(buf);
-      printf("SIZE OF SENT MESSAGE WAS %zu\n", size);
-      printf("\033[0;33mNode %zu Sent:\n%s\033[0m\n", index(), buf);
+      //printf("SIZE OF SENT MESSAGE WAS %zu\n", size);
+      if (size < 5000) printf("\033[0;33mNode %zu Sent:\n%s\033[0m\n", index(), buf);
+      else printf("\033[0;33mNode %zu Sent:\n%c\033[0m\n", index(), (char)msg->get_kind());
       send(conn, &size, sizeof(size_t), 0);
       send(conn, buf, size, 0);
       close(conn);
@@ -371,8 +348,9 @@ class KVStore : public Object {
       size_t rd = 0;
       while (rd != size) rd += read(req, buf + rd, size - rd);
       MessageSerializer s;
-      printf("\033[0;34mNode %zu Received:\n%s\033[0m\n", index(), buf);
       Message* msg = s.get_message(buf);
+      if (rd < 5000) printf("\033[0;34mNode %zu Received:\n%s\033[0m\n", index(), buf);
+      else printf("\033[0;34mNode %zu Received:\n%c\033[0m\n", index(), (char)msg->get_kind());
       close(req);
       return msg;
     }
@@ -394,41 +372,69 @@ class KVStore : public Object {
 
     /* Returns the value stored for a key. If key does not belong to this
        node, contact the correct node via the network. */
-    const char* get(Key* k) {
+    void getChars(Key* k, size_t tgt) {
       cout << (k->getName()->c_str()) << endl;
       cout << k->getHomeNode() << endl;
       cout << k->getCreatorID() << endl;
 
-
       size_t to_node = k->getHomeNode();
+      assert(to_node == index());
       // No need for networking if key is in this node.
       if (to_node == index()) {
         for (size_t i = 0; i < keys_->size(); i++) {
           if (keys_->get(i)->equals(k)) {
-            return values_->get(i)->c_str();
+            Reply r(index(), tgt, ++msg_id_, values_->get(i)->c_str(), 1);
+            send_m(&r);
+            return ;
           }
         }
-        return nullptr;
-      } else {
+        Reply r(index(), tgt, ++msg_id_, "", 0);
+        send_m(&r);
+        return ;
+      }/**
+      else {
         // Need to request from a different node.
         Get g(index(), to_node, msg_id_++, k);
         send_m(&g);
         Reply* r = dynamic_cast<Reply*>(recv_m());
-              cout << "got 786" << endl;
         return r->value_;
       }
+      */
     }
+
+    /* Returns the value stored for a key. If key does not belong to this
+       node, contact the correct node via the network. BLOCKING. */
+    const char* getCharsAndWait(Key* k);
 
     /**
       * In response to a get message, send a reply with the value for the
       * given key.
       */
     void reply(Key* k, size_t tgt) {
-      const char* value = getAndWait(k);
-      Reply r(index(), tgt, ++msg_id_, value);
+      getChars(k, tgt);
+    }
+
+    /**
+      * In response to a get message, send a reply with the value for the
+      * given key. BLOCKING.
+      */
+    void replyAndWait(Key* k, size_t tgt) {
+      cout << "***************************************" << endl;
+      const char* value = getCharsAndWait(k);
+      Reply r(index(), tgt, ++msg_id_, value, 1);
       send_m(&r);
     }
 
+    // tell the server we are done
+    void teardown() {
+      Kill kill(index(), 0, ++msg_id_);
+      send_m(&kill);
+    }
+
+    // get the number of nodes that are done
+    size_t get_num_dead() {
+      return num_dead_;
+    }
 
     /**
       * Infinitely loops while looking for messages that arrive.
@@ -461,8 +467,14 @@ class KVStore : public Object {
           {
             Put* p_received = dynamic_cast<Put*>(received);
             put(p_received->get_key(), p_received->get_value());
+          } else if (kind == MsgKind::WaitAndGet)
+          {
+            WaitAndGet* w_received = dynamic_cast<WaitAndGet*>(received);
+            replyAndWait(w_received->get_key(), w_received->sender());
+          } else if (kind == MsgKind::Kill)
+          {
+            num_dead_++;
           }
-
         }
       }
     }

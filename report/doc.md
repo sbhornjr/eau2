@@ -17,8 +17,6 @@ The third layer will be the customer facing layer. A data analyst can input a qu
 
 ### Implementation:
 
-Note: Our implementation will be changing as the project develops. This is a basic outline of what we expect to have.
-
 The Sorer class will handle reading in data from a schema-on-read file and determining a DataFrame schema. Four types of data will be supported: booleans, integers, strings, and doubles. Data will be read only once. Basic operations happening within Sorer would include determining the overall size of passed in data and splitting it up into smaller dataframes, retrieving a schema from data, and handling rows with missing values by discarding them.
 * DataFrame* generate_dataframe(Schema s)
 
@@ -32,19 +30,14 @@ The DataFrame class will have a particular schema derived from the result of run
 * void finalize_all()
 * void map(Rower r), void print()
 
-
-The network consists of various client nodes that are able to register with a server node and then exchange messages with other nodes directly. They will each be responsible for part of a distributed key-value store, so exchanging chunks of data will be necessary. These chunks of data are represented by the Chunk object and have a mapping to a home node. Data frames and messages will be able to be serialized to allow for easy travel through sockets. We can add pairs to the KV store with the put method.
+The primary KV Store is a <Key, String> mapping where keys have a string value (name) and an index indicating which node the value belongs to, and the String is a serialized object, either a DataFrame or a Chunk. The KVStore stores chunks internally for columns so that an entire DataFrame is not stored in one node's memory, and it stores DataFrames for the application layer's use. It is also connected to a network. The network consists of various client nodes that are able to register with a server node and then exchange messages with other nodes directly. They will each be responsible for part of a distributed key-value store, so exchanging chunks of data will be necessary. These chunks of data are represented by the Chunk object and have a mapping to a home node. Data frames and messages will be able to be serialized to allow for easy travel through sockets. We can add pairs to the KV store with the put method.
 * size_t index(), sockaddr_in getMyIP(), size_t port()
 * void server_init(), void client_init()
 * void init_sock()
 * void send_m(Message* m), Message* recv_m();
-* void put(Key* k, const char* value)
+* void put(Key* k, Chunk* value), put(Key* k, DataFrame* value)
+* DataFrame* get(Key* k), DataFrame* getAndWait(Key* k)
 
-The primary Key-Value store will be a <Key, DataFrame> mapping where keys are comprised of a string value and a size_t representing the home node of the data, and values will be data frames or sections of data frames distributed among various nodes. We have chosen to use a KVStore to section out portions of data frames that belong to each node. The KV store will support put(k, v), which adds the mapping of <k, v>, or updates k’s value if it already exists; get(k), which gets the value corresponding to k if it exists; and getAndWait(k), which gets the value corresponding to k, and if k does not exist, it will wait until it does (i.e. it is blocking). Additionally, we support the removal of mappings with the remove(k) method.
-* void put(Key* key, DataFrame* value)
-* DataFrame* get(Key* key)
-* DataFrame* getAndWait(Key* key)
-* DataFrame* remove(Key* key)
 
 The application will consist of customer-facing code that allows users to enter queries. The results of queries will be output to the user’s console (or whatever front-end they are accessing the eau2 application from).
 * <return type TBD> sendQuery(String query)
@@ -99,9 +92,9 @@ In our third milestone, we have added a pseudo network running on threads. This 
 
 In our fourth milestone, we have added a real network that relies on communication over sockets. This network is capable of registering clients, sharing a directory of nodes, sending serialized messages between nodes, and thus sharing dataframes/information whenever necessary. We have not quite linked the distributed KeyValue stores to the network as this presented a significant challenge for us this week.  
 
-`	./compiledName 1 3 127.0.0.2 8084 127.0.0.1 8083 &
-	./compiledName 2 3 127.0.0.3 8085 127.0.0.1 8083 &
-	./compiledName 0 3 127.0.0.1 8083 127.0.0.1 8083`
+`	./compiledName 1 3 127.0.0.2 8084 127.0.0.1 8083 &`
+`	./compiledName 2 3 127.0.0.3 8085 127.0.0.1 8083 &`
+`	./compiledName 0 3 127.0.0.1 8083 127.0.0.1 8083`
 
 The above code would create a network with three nodes, the first two being clients, and the last being the server.
 
@@ -111,9 +104,16 @@ The above code would create a network with three nodes, the first two being clie
 
 The above code allows for the creation of a network and the initialization of the type of node.
 
-### Open questions:
+In the fourth milestone, the way we run the compiled executables is the same as above, but creating the network is very different. Now, the network is directly tied to the KVStore, which has also been reworked.
 
-How should we share the KV store with nodes running in the network? Should we send the KV with the Directory message from the server_init() method?
+Now, we create a network/kvstore by doing:
+
+` kv = new KVStore(node_info, num_nodes, this_node, server_ip_str, server_port);`
+` NetworkThread n1(kv);`
+
+The KVStore takes in all network information and sets up the network. We then create a NetworkThread, which launches a while loop so that the node can listen for incoming requests. After the above code, you can run your application code with the created KVStore.
+
+### Open questions:
 
 ### Status:
 
@@ -123,4 +123,6 @@ How should we share the KV store with nodes running in the network? Should we se
 
 [Week of March 23] We got the Demo example working correctly by distributing the KV store. We currently do this using threads instead of our network layer, and by creating a common KSMap that is shared between each Demo instance. We also cleaned up our file structure a bit by removing unnecessary files. We added unit tests into our testing suite, along with keeping tests from each milestone so that are tests are more cumulative and comprehensive. We still need to switch from using threads to using our network. We will first need to create serialization methods for DataFrames, then alter the KV store to communicate with the network layer. After that, we will have to figure out how to make columns/arrays distributed instead of just the KV store.
 
-[Week of March 30] We got the network functioning. Clients are able to register and the server can message clients with a directory. We spent a majority of our time refactoring our code with Chunk and KVStore so that each node did not have to be responsible for the entire data frame. We added some tests and completed serialization for DataFrames/Chunks/Arrays. We faced challenges with cyclic dependencies that forced us to refactor another significant portion of the code. We did not quite get the word count example running as we were stuck at how to insert the DataFrame into the network. 
+[Week of March 30] We got the network functioning. Clients are able to register and the server can message clients with a directory. We spent a majority of our time refactoring our code with Chunk and KVStore so that each node did not have to be responsible for the entire data frame. We added some tests and completed serialization for DataFrames/Chunks/Arrays. We faced challenges with cyclic dependencies that forced us to refactor another significant portion of the code. We did not quite get the word count example running as we were stuck at how to insert the DataFrame into the network.
+
+[Week of April 6] We broke the network. We needed to overhaul our implementations of both the network and of the KVStore, which took a lot of refactoring in much of the codebase. We have everything pre-milestone 3 working, including a bunch of separate unit tests. We also resolved a lot of issues from previous milestones. We are currently at a point where the network is almost functioning again how we want it to. We are currently able to send data frames and chunks over the network, but we are running into an issue when a key-value pair isn't present yet. Because of this, the Demo example is not quite working, let alone Word Count or Linus. We fully intend on getting all functionality working before our final code walk. If you run make test, you will see the results of all unit tests and milestones 1 and 2. We have milestone 3 networking stuff attempting to run, but it fails after a little bit and gets caught in a loop. We wanted to keep it in to show how far we have gotten with the networking, but make sure that you CTRL+C to stop the loop once the feedback in the terminal stops coming in.

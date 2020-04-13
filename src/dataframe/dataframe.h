@@ -587,11 +587,11 @@ DataFrame* DataFrame::from_scalar(Key* key, KVStore* kv, String* val) {
  * @param key: the key whose value we want to get
  * @returns the value that corresponds with the given key
  */
-DataFrame* KVStore::get_df(Key* key) {
+DataFrame* KVStore::get(Key* key) {
   Schema scm("");
   DataFrame df_(scm, this);
   // this chunk is stored here
-  if (key->getHomeNode() == index()) {
+  if (key->getHomeNode() == (int)index()) {
     int ind = -1;
     for (size_t i = 0; i < size_; ++i) {
       if (key->equals(keys_->get(i))) {
@@ -604,8 +604,91 @@ DataFrame* KVStore::get_df(Key* key) {
     }
     DataFrame* df = df_.get_dataframe(values_->get(ind)->c_str());
     return df;
+  } else {
+    Get g(index(), key->getHomeNode(), msg_id_++, key);
+    send_m(&g);
+    Reply* r = dynamic_cast<Reply*>(recv_m());
+    return df_.get_dataframe(r->value_);
   }
-  // TODO else request from network
+}
+
+/**
+ * Gets the dataframe at a specific key. Blocking.
+ * @param key: the key whose value we want to get
+ * @returns the value that corresponds with the given key
+ */
+DataFrame* KVStore::getAndWait(Key* key) {
+  //printf("GET AND WAIT CALLED by %zu\n", index());
+  Schema scm("");
+  DataFrame df_(scm, this);
+  size_t to_node = key->getHomeNode();
+  bool found = false;
+  //cout << key->getName()->c_str() << ' ' << key->getHomeNode() << endl;
+  // No need for networking if key is in this node.
+  if (to_node == index()) {
+    while(!found) {
+      for (size_t i = 0; i < keys_->size(); i++) {
+        if (keys_->get(i)->equals(key)) {
+          found = true;
+          //printf("GET AND WAIT RETURNED FOR %zu\n", index());
+          return df_.get_dataframe(values_->get(i)->c_str());
+        }
+      }
+    }
+  } else {
+    //cout << "I AM HERE AND I AM INDEX " << index() << endl;
+    // Need to request from a different node.
+    // TODO FIX BLOCKING
+    bool had_it = false;
+    const char* val;
+    while (!had_it) {
+      //cout << "a" << endl;
+      Get g(index(), to_node, msg_id_++, key);
+      //cout << "b" << endl;
+      send_m(&g);
+      //cout << "c" << endl;
+      Reply* r = dynamic_cast<Reply*>(recv_m());
+      //cout << "d" << endl;
+      if (r->had_it_) {
+        had_it = true;
+        val = r->value_;
+      }
+    }
+    return df_.get_dataframe(val);
+  }
+  return nullptr;
+}
+
+/**
+ * Gets the dataframe at a specific key as chars. Blocking.
+ * @param key: the key whose value we want to get
+ * @returns the value that corresponds with the given key
+ */
+const char* KVStore::getCharsAndWait(Key* key) {
+  printf("GET AND WAIT CALLED by %zu\n", index());
+  Schema scm("");
+  DataFrame df_(scm, this);
+  size_t to_node = key->getHomeNode();
+  bool found = false;
+  // No need for networking if key is in this node.
+  if (to_node == index()) {
+    while(!found) {
+      for (size_t i = 0; i < keys_->size(); i++) {
+        if (keys_->get(i)->equals(key)) {
+          found = true;
+          printf("GET AND WAIT RETURNED FOR %zu\n", index());
+          return values_->get(i)->c_str();
+        }
+      }
+    }
+  } else {
+    // Need to request from a different node.
+    // TODO FIX BLOCKING
+    WaitAndGet g(index(), to_node, msg_id_++, key);
+    send_m(&g);
+    Reply* r = dynamic_cast<Reply*>(recv_m());
+    return r->value_;
+  }
   return nullptr;
 }
 
@@ -626,7 +709,7 @@ void KVStore::put(Key* key, DataFrame* value) {
   if (next_node_ == num_nodes_) next_node_ = 0;
 
   // does this chunk belong here
-  if (key->getHomeNode() == index()) {
+  if (key->getHomeNode() == (int)index()) {
     // yes - add to map
     keys_->push_back(key);
     values_->push_back(new String(df_.serialize(value)));

@@ -56,7 +56,7 @@ public:
 
     assert(df->get_int(0,1) == 1);
 
-    DataFrame* df2 = d->get_dataframe(getKVStore()->get(key_int));
+    DataFrame* df2 = getKVStore()->get(key_int);
     for (size_t i = 0; i < SZ; ++i) sum -= df2->get_int(0, i);
 
     assert(sum == 0);
@@ -80,7 +80,7 @@ public:
 
     assert(df->get_double(0,1) == 1);
 
-    DataFrame* df2 = d->get_dataframe(getKVStore()->get(key_double));
+    DataFrame* df2 = getKVStore()->get(key_double);
     for (size_t i = 0; i < SZ; ++i) sum -= df2->get_double(0, i);
 
     assert(sum == 0);

@@ -145,7 +145,7 @@ public:
             // our array of size is filled - send to kv
             if (chunk_->full_) {
                 string k = to_string(id_) + "_" + to_string(curr_chunk);
-                Key* key = new Key(new String(k.c_str()), 0, id_);
+                Key* key = new Key(new String(k.c_str()), (size_t)id_);
                 keys_->push_back(key);
                 kv_->put(key, chunk_);
                 ++curr_chunk;
@@ -156,7 +156,7 @@ public:
         }
         // send the last chunk
         string k = to_string(id_) + "_" + to_string(curr_chunk);
-        Key* key = new Key(new String(k.c_str()), 0, id_);
+        Key* key = new Key(new String(k.c_str()), (size_t)id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
         va_end(args);
@@ -209,7 +209,7 @@ public:
 
             // send chunk to kv
             string k = to_string(id_) + "_" + to_string(num_chunks_);
-            Key* key = new Key(new String(k.c_str()), 0, id_);
+            Key* key = new Key(new String(k.c_str()), (size_t)id_);
             keys_->push_back(key);
             kv_->put(key, chunk_);
 
@@ -231,7 +231,7 @@ public:
     void finalize() {
         // send chunk to kv
         string k = to_string(id_) + "_" + to_string(num_chunks_);
-        Key* key = new Key(new String(k.c_str()), 0, id_);
+        Key* key = new Key(new String(k.c_str()), (size_t)id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
 
@@ -298,7 +298,7 @@ public:
             // our array of size is filled - send to kv
             if (chunk_->full_) {
                 string k = to_string(id_) + "_" + to_string(curr_chunk);
-                Key* key = new Key(new String(k.c_str()), 0, id_);
+                Key* key = new Key(new String(k.c_str()), (size_t)id_);
                 keys_->push_back(key);
                 kv_->put(key, chunk_);
                 ++curr_chunk;
@@ -309,7 +309,7 @@ public:
         }
         // send the last chunk
         string k = to_string(id_) + "_" + to_string(curr_chunk);
-        Key* key = new Key(new String(k.c_str()), 0, id_);
+        Key* key = new Key(new String(k.c_str()), (size_t)id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
         va_end(args);
@@ -362,7 +362,7 @@ public:
 
             // send chunk to kv
             string k = to_string(id_) + "_" + to_string(num_chunks_);
-            Key* key = new Key(new String(k.c_str()), 0, id_);
+            Key* key = new Key(new String(k.c_str()), (size_t)id_);
             keys_->push_back(key);
             kv_->put(key, chunk_);
 
@@ -384,7 +384,7 @@ public:
     void finalize() {
         // send chunk to kv
         string k = to_string(id_) + "_" + to_string(num_chunks_);
-        Key* key = new Key(new String(k.c_str()), 0, id_);
+        Key* key = new Key(new String(k.c_str()), (size_t)id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
 
@@ -449,7 +449,7 @@ public:
             // our array of size is filled - send to kv
             if (chunk_->full_) {
                 string k = to_string(id_) + "_" + to_string(curr_chunk);
-                Key* key = new Key(new String(k.c_str()), 0, id_);
+                Key* key = new Key(new String(k.c_str()), (size_t)id_);
                 keys_->push_back(key);
                 kv_->put(key, chunk_);
                 ++curr_chunk;
@@ -460,7 +460,7 @@ public:
         }
         // send the last chunk
         string k = to_string(id_) + "_" + to_string(curr_chunk);
-        Key* key = new Key(new String(k.c_str()), 0, id_);
+        Key* key = new Key(new String(k.c_str()), (size_t)id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
         va_end(args);
@@ -508,16 +508,13 @@ public:
         if (done_) return;
         // the chunk is full
         if (chunk_->full_) {
-            cout << "Filled!!!!!" << endl;
             // increment size values
             ++size_;
 
-                        cout << "!@#$!@#$" << endl;
             // send chunk to kv
             string k = to_string(id_) + "_" + to_string(num_chunks_);
-            Key* key = new Key(new String(k.c_str()), 0, id_);
+            Key* key = new Key(new String(k.c_str()), (size_t)id_);
             keys_->push_back(key);
-            cout << "12345412341234" << endl;
 
             kv_->put(key, chunk_);
 
@@ -539,7 +536,7 @@ public:
     void finalize() {
         // send chunk to kv
         string k = to_string(id_) + "_" + to_string(num_chunks_);
-        Key* key = new Key(new String(k.c_str()), 0, id_);
+        Key* key = new Key(new String(k.c_str()), (size_t)id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
 
@@ -605,7 +602,7 @@ public:
             // our array of size is filled - send to kv
             if (chunk_->full_) {
                 string k = to_string(id_) + "_" + to_string(curr_chunk);
-                Key* key = new Key(new String(k.c_str()), 0, id_);
+                Key* key = new Key(new String(k.c_str()), (size_t)id_);
                 keys_->push_back(key);
                 kv_->put(key, chunk_);
                 ++curr_chunk;
@@ -616,7 +613,7 @@ public:
         }
         // send the last chunk
         string k = to_string(id_) + "_" + to_string(curr_chunk);
-        Key* key = new Key(new String(k.c_str()), 0, id_);
+        Key* key = new Key(new String(k.c_str()), (size_t)id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
         va_end(args);
@@ -669,7 +666,7 @@ public:
 
             // send chunk to kv
             string k = to_string(id_) + "_" + to_string(num_chunks_);
-            Key* key = new Key(new String(k.c_str()), 0, id_);
+            Key* key = new Key(new String(k.c_str()), (size_t)id_);
             keys_->push_back(key);
             kv_->put(key, chunk_);
 
@@ -691,7 +688,7 @@ public:
     void finalize() {
         // send chunk to kv
         string k = to_string(id_) + "_" + to_string(num_chunks_);
-        Key* key = new Key(new String(k.c_str()), 0, id_);
+        Key* key = new Key(new String(k.c_str()), (size_t)id_);
         keys_->push_back(key);
         kv_->put(key, chunk_);
 
