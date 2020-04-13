@@ -136,23 +136,23 @@ public:
 
 class WaitAndGet : public Message {
 public:
-    size_t idx;
+    Key* k_;
 
-    WaitAndGet(size_t sender, size_t target, size_t id, size_t idx_)
+    WaitAndGet(size_t sender, size_t target, size_t id, Key* k)
     : Message(MsgKind::WaitAndGet, sender, target, id) {
-        idx = idx_;
+        k_ = k;
     }
 };
 
 class Put : public Message {
 public:
-    Key* key;
-    const char* value;
+    Key* k_;
+    const char* value_;
 
-    Put(size_t sender, size_t target, size_t id, Key* key_, const char* value_)
+    Put(size_t sender, size_t target, size_t id, Key* key, const char* value)
     : Message(MsgKind::Put, sender, target, id) {
-        key = key_;
-        value = value_;
+        k_ = key;
+        value_ = value;
     }
 };
 
@@ -197,6 +197,26 @@ public:
           const char* ser_text = serialize_(dynamic_cast<Text*>(msg));
           barr->push_string(ser_text);
           delete[] ser_text;
+      }
+      else if(kind == MsgKind::Get) {
+          const char* ser_get = serialize_(dynamic_cast<Get*>(msg));
+          barr->push_string(ser_get);
+          delete[] ser_get;
+      }
+      else if(kind == MsgKind::WaitAndGet) {
+          const char* ser_wag = serialize_(dynamic_cast<WaitAndGet*>(msg));
+          barr->push_string(ser_wag);
+          delete[] ser_wag;
+      }
+      else if(kind == MsgKind::Put) {
+          const char* ser_put = serialize_(dynamic_cast<Put*>(msg));
+          barr->push_string(ser_put);
+          delete[] ser_put;
+      }
+      else if(kind == MsgKind::Reply) {
+          const char* ser_rep = serialize_(dynamic_cast<Reply*>(msg));
+          barr->push_string(ser_rep);
+          delete[] ser_rep;
       }
 
       const char* str = barr->as_bytes();
@@ -245,6 +265,10 @@ public:
       else if (kind == MsgKind::Directory) return get_directory_(&str[i], msg);
       else if (kind == MsgKind::Kill) return get_kill_(&str[i], msg);
       else if (kind == MsgKind::Text) return get_text_(&str[i], msg);
+      else if (kind == MsgKind::Get) return get_get_(&str[i], msg);
+      else if (kind == MsgKind::WaitAndGet) return get_wag_(&str[i], msg);
+      else if (kind == MsgKind::Put) return get_put_(&str[i], msg);
+      else if (kind == MsgKind::Reply) return get_reply_(&str[i], msg);
       return msg;
   }
 
@@ -483,6 +507,152 @@ public:
       delete sarr;
 
       return dir;
+  }
+
+  const char* serialize_(Get* g) {
+      ByteArray* barr = new ByteArray();
+
+      // serialize the key
+      barr->push_string("\nkey:\n");
+      const char* ser_key = Serializer::serialize(g->k_);
+      barr->push_string(ser_key);
+      delete[] ser_key;
+
+      const char* str = barr->as_bytes();
+      delete barr;
+      return str;
+  }
+
+  const char* serialize_(WaitAndGet* wag) {
+      ByteArray* barr = new ByteArray();
+
+      // serialize the key
+      barr->push_string("\nkey:\n");
+      const char* ser_key = Serializer::serialize(wag->k_);
+      barr->push_string(ser_key);
+      delete[] ser_key;
+
+      const char* str = barr->as_bytes();
+      delete barr;
+      return str;
+  }
+
+  const char* serialize_(Put* p) {
+      ByteArray* barr = new ByteArray();
+
+      // serialize the key
+      barr->push_string("\nkey:\n");
+      const char* ser_key = Serializer::serialize(p->k_);
+      barr->push_string(ser_key);
+      delete[] ser_key;
+
+      // serialize the value
+      barr->push_string("\nval: ");
+      barr->push_string(p->value_);
+
+      const char* str = barr->as_bytes();
+      delete barr;
+      return str;
+  }
+
+  const char* serialize_(Reply* r) {
+      ByteArray* barr = new ByteArray();
+
+      // serialize the value
+      barr->push_string("\nval: ");
+      barr->push_string(r->value_);
+
+      const char* str = barr->as_bytes();
+      delete barr;
+      return str;
+  }
+
+  Message* get_get_(const char* str, Message* msg) {
+      assert(msg->kind_ == MsgKind::Get);
+
+      // go through lines of str
+      size_t i = 0;
+      Key* k;
+      while (i < strlen(str)) {
+          // get the type of this line
+          char type_buff[4];
+          memcpy(type_buff, &str[i], 3);
+          type_buff[3] = 0;
+          // this is a message line
+          if (strcmp(type_buff, "key") == 0) {
+              i += 9;
+              k = Serializer::get_key(&str[i], &i);
+          }
+          else break;
+      }
+
+      // Make Get Object
+      Get* get = new Get(msg->sender_, msg->target_, msg->id_, k);
+
+      return get;
+  }
+
+  Message* get_wag_(const char* str, Message* msg) {
+      assert(msg->kind_ == MsgKind::WaitAndGet);
+
+      // go through lines of str
+      size_t i = 0;
+      Key* k;
+      while (i < strlen(str)) {
+          // get the type of this line
+          char type_buff[4];
+          memcpy(type_buff, &str[i], 3);
+          type_buff[3] = 0;
+          // this is a message line
+          if (strcmp(type_buff, "key") == 0) {
+              i += 9;
+              k = Serializer::get_key(&str[i], &i);
+          }
+          else break;
+      }
+
+      // Make WAG Object
+      WaitAndGet* wag = new WaitAndGet(msg->sender_, msg->target_, msg->id_, k);
+
+      return wag;
+  }
+
+  Message* get_put_(const char* str, Message* msg) {
+      assert(msg->kind_ == MsgKind::Put);
+
+      // go through lines of str
+      size_t i = 0;
+      Key* k;
+      //const char* val;
+      while (i < strlen(str)) {
+          // get the type of this line
+          char type_buff[4];
+          memcpy(type_buff, &str[i], 3);
+          type_buff[3] = 0;
+          // this is a message line
+          if (strcmp(type_buff, "key") == 0) {
+              i += 9;
+              k = Serializer::get_key(&str[i], &i);
+          }
+          else if (strcmp(type_buff, "val") == 0) {
+            i += 5;
+          }
+          else break;
+      }
+
+      // Make put Object
+      Put* put = new Put(msg->sender_, msg->target_, msg->id_, k, &str[i]);
+
+      return put;
+  }
+
+  Message* get_reply_(const char* str, Message* msg) {
+      assert(msg->kind_ == MsgKind::Reply);
+
+      // Make reply Object
+      Reply* r = new Reply(msg->sender_, msg->target_, msg->id_, &str[5]);
+
+      return r;
   }
 
 };
