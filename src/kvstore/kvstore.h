@@ -177,6 +177,8 @@ class KVStore : public Object {
 		 * @param value: the value we want associated with the key
 		 */
 		void put(Key* key, Chunk* value) {
+
+      cout << "FAILED HERE 1" << endl;
 			// choose which node this chunk will go to
 			key->setHomeNode(get_next_node());
 			++next_node_;
@@ -186,13 +188,22 @@ class KVStore : public Object {
 			if (key->getHomeNode() == index()) {
 				// yes - add to map
 				keys_->push_back(key);
-				values_->push_back(new String(cs_.serialize(value)));
+        cout << "FAILED HERE 3" << endl;
+
+        String* s =new String(cs_.serialize(value));
+        cout << "FAILED HERE 4" << endl;
+
+				values_->push_back(s);
+
 				++size_;
 			} else {
-        printf("TODO PUT KEY-CHUNK kvstore line 197\n");
-				// TODO: no - send to correct node
+        cout << "FAILED HERE 2" << endl;
+        Put p(index(), key->getHomeNode(), msg_id_++, key, cs_.serialize(value));
+        send_m(&p);
 			}
 		}
+
+
 
     /**
 		 * Sets the value at the specified key to the value.
@@ -337,6 +348,7 @@ class KVStore : public Object {
       }
       const char* buf = s.serialize(msg);
       size_t size = strlen(buf);
+      printf("SIZE OF SENT MESSAGE WAS %zu\n", size);
       printf("\033[0;33mNode %zu Sent:\n%s\033[0m\n", index(), buf);
       send(conn, &size, sizeof(size_t), 0);
       send(conn, buf, size, 0);
@@ -355,7 +367,7 @@ class KVStore : public Object {
         printf("Unable to read");
         exit(1);
       }
-      char buf[10000];
+      char buf[360000];
       size_t rd = 0;
       while (rd != size) rd += read(req, buf + rd, size - rd);
       MessageSerializer s;
@@ -446,9 +458,9 @@ class KVStore : public Object {
             Get* g_received = dynamic_cast<Get*>(received);
             reply(g_received->get_key(), g_received->sender());
           } else if (kind == MsgKind::Put)
-
           {
-
+            Put* p_received = dynamic_cast<Put*>(received);
+            put(p_received->get_key(), p_received->get_value());
           }
 
         }

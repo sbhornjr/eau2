@@ -332,6 +332,8 @@ class ChunkSerializer: public Serializer {
 public:
 
   const char* serialize(Chunk* chunk) {
+    cout << "FAILED HERE 5" << endl;
+
     ByteArray* barr = new ByteArray();
 
     // serialize the type of chunk
@@ -340,14 +342,24 @@ public:
     ser_type[0] = chunk->type_;
     barr->push_string(ser_type);
 
+    cout << "FAILED HERE 6" << endl;
+
+
     // serialize the elements of chunk
     const char* ser_elm;
     if (chunk->type_ == 'I') {
       IntChunk* ic = chunk->as_int();
       ser_elm = Serializer::serialize(ic->arr_);
     } else if (chunk->type_ == 'D') {
+      cout << "FAILED HERE 10" << endl;
+
       DoubleChunk* dc = chunk->as_double();
+      cout << "FAILED HERE 11" << endl;
+      cout << dc->arr_ << endl;
+
       ser_elm = Serializer::serialize(dc->arr_);
+      cout << "FAILED HERE 12" << endl;
+
     } else if (chunk->type_ == 'B') {
       BoolChunk* bc = chunk->as_bool();
       ser_elm = Serializer::serialize(bc->arr_);
@@ -356,9 +368,14 @@ public:
       ser_elm = Serializer::serialize(sc->arr_);
     }
 
+    cout << "FAILED HERE 7" << endl;
+
+
     barr->push_back('\n');
     barr->push_string(ser_elm);
     delete[] ser_elm;
+
+    cout << "FAILED HERE 8" << endl;
 
     const char* str = barr->as_bytes();
     delete barr;

@@ -512,10 +512,13 @@ public:
             // increment size values
             ++size_;
 
+                        cout << "!@#$!@#$" << endl;
             // send chunk to kv
             string k = to_string(id_) + "_" + to_string(num_chunks_);
             Key* key = new Key(new String(k.c_str()), 0, id_);
             keys_->push_back(key);
+            cout << "12345412341234" << endl;
+
             kv_->put(key, chunk_);
 
             ++num_chunks_;

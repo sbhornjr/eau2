@@ -158,6 +158,14 @@ public:
         k_ = key;
         value_ = value;
     }
+
+    Key* get_key() {
+      return k_;
+    }
+
+    const char* get_value() {
+      return value_;
+    }
 };
 
 class Reply : public Message {

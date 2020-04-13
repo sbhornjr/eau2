@@ -36,11 +36,11 @@ const char* server_ip_str;
 KVStore* kv;
 
 void producer() {
-  cout << "Ran Producer TODO 100*1000" << endl;
+  cout << "Ran Producer" << endl;
 
   // Store sum in a variable.
   double sum = 0;
-  double SZ = 10 * 10;
+  double SZ = 100 * 1000;
 
   // Create Double Column
   DoubleColumn* dc = new DoubleColumn(kv);
@@ -87,16 +87,15 @@ void producer() {
   delete df2;
   delete kv;
 
-  cout << "Finished Producer" << endl;
-
   delete ser_df;
   delete ser_df2;
+  cout << "Finished Producer" << endl;
 }
 
 void counter() {
   cout << "Ran Counter" << endl;
 
-  size_t SZ = 10 * 10;
+  size_t SZ = 100 * 1000;
   double sum = 0;
 
   cout << "\033[0;31mRan Counter A\033[0m" << endl;

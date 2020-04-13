@@ -191,6 +191,8 @@ public:
 
   // Converts an array of String objects into its char* equivalent.
   const char* serialize(StringArray* sarr) {
+
+        cout << "FAILED HERE SARR" << endl;
       ByteArray* barr = new ByteArray();
 
       // serialize the size
@@ -275,6 +277,9 @@ public:
 
   // Converts a Double array into its char* equivalent.
   const char* serialize(DoubleArray* darr) {
+
+    cout << "FAILED HERE 12" << endl;
+
       ByteArray* barr = new ByteArray();
 
       // serialize size
@@ -282,6 +287,9 @@ public:
       const char* ser_sz = serialize(darr->size());
       barr->push_string(ser_sz);
       delete[] ser_sz;
+
+      cout << "FAILED HERE 13" << endl;
+
 
       // serialize array
       barr->push_string("\narr: ");
@@ -292,10 +300,15 @@ public:
           delete[] ser_dbl;
       }
 
+      cout << "FAILED HERE 14" << endl;
+
+
       // add last element of array
       const char* ser_dbl = serialize(darr->get(darr->size() - 1));
       barr->push_string(ser_dbl);
       delete[] ser_dbl;
+
+      cout << "FAILED HERE 15" << endl;
 
       const char* str = barr->as_bytes();
       delete barr;
@@ -355,6 +368,8 @@ public:
 
   // Converts a Bool array into its char* equivalent.
   const char* serialize(BoolArray* arr) {
+    cout << "FAILED HERE BOOL" << endl;
+
       ByteArray* barr = new ByteArray();
 
       // serialize size
