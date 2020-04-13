@@ -36,7 +36,7 @@ const char* server_ip_str;
 KVStore* kv;
 
 void producer() {
-  cout << "Ran Producer" << endl;
+  cout << "Ran Producer TODO 100*1000" << endl;
 
   // Store sum in a variable.
   double sum = 0;
@@ -49,11 +49,10 @@ void producer() {
     sum += i;
   }
 
-  cout << "Ran Producer 0.75 " << endl;
+  cout << "Ran Producer A" << endl;
   dc->finalize();
 
-  cout << "Ran Producer 1" << endl;
-
+  cout << "Ran Producer B" << endl;
 
   // Create first dataframe.
   Schema scm;
@@ -65,16 +64,24 @@ void producer() {
   sumStorage->push_back(sum);
   sumStorage->finalize();
 
+  cout << "Ran Producer C" << endl;
+
+
   // Create second dataframe.
   Schema scm2;
   DataFrame* df2 = new DataFrame(scm2, kv);
   df2->add_column(sumStorage);
+
+  cout << "Ran Producer D" << endl;
+
 
   // Put serialized DF's into the KV store.
   const char* ser_df = df->serialize(df);
   const char* ser_df2 = df2->serialize(df2);
   kv->put(mainK, ser_df);
   kv->put(check, ser_df2);
+
+  cout << "Ran Producer E" << endl;
 
   delete df;
   delete df2;
@@ -92,21 +99,36 @@ void counter() {
   size_t SZ = 10 * 10;
   double sum = 0;
 
+  cout << "\033[0;31mRan Counter A\033[0m" << endl;
+
   // Grab dataframe belonging to mainK and do another summation.
-  DataFrame* v = v->get_dataframe(kv->getAndWait(mainK));
+  const char* res = kv->getAndWait(mainK);
+
+  cout << "\033[0;31mRan Counter AB!!!\033[0m" << endl;
+
+  DataFrame* v = v->get_dataframe(res);
+
+  cout << "\033[0;31mRan Counter ABC!!!\033[0m" << endl;
+
   for (size_t i = 0; i < SZ; ++i) sum += v->get_double(0, i);
   printf("The sum is %f", sum);
   delete v;
+
+  cout << "Ran Counter B" << endl;
 
   // Create Double Column that stores the sum.
   DoubleColumn* sumStorage = new DoubleColumn(kv);
   sumStorage->push_back(sum);
   sumStorage->finalize();
 
+  cout << "Ran Counter C" << endl;
+
   // Create verify dataframe.
   Schema scm;
   DataFrame* df3 = new DataFrame(scm, kv);
   df3->add_column(sumStorage);
+
+  cout << "Ran Counter D" << endl;
 
   // Put serialized dataframe into KV.
   const char* ser_df3 = df3->serialize(df3);

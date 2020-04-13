@@ -145,7 +145,7 @@ class KVStore : public Object {
 		 * @returns the serialized value that corresponds with the given key
 		 */
 		const char* getAndWait(Key* k) {
-      printf("GET AND WAIT CALLED\n");
+      printf("GET AND WAIT CALLED by %zu\n", index());
       size_t to_node = k->getHomeNode();
       bool found = false;
       // No need for networking if key is in this node.
@@ -155,6 +155,7 @@ class KVStore : public Object {
             if (keys_->get(i)->equals(k)) {
               found = true;
               return values_->get(i)->c_str();
+              printf("GET AND WAIT RETURNED FOR %zu\n", index());
             }
           }
         }
@@ -268,7 +269,7 @@ class KVStore : public Object {
 
     // Initialize a client node.
     void client_init(const char* server_adr, size_t server_port) {
-      sleep(1);
+      sleep(3); // Have clients wait until server is ready.
       init_sock_();
 
       nodes_ = new NodeInfo*[1];
@@ -336,7 +337,7 @@ class KVStore : public Object {
       }
       const char* buf = s.serialize(msg);
       size_t size = strlen(buf);
-      printf("\033[0;33mSent:\n%s\033[0m\n", buf);
+      printf("\033[0;33mNode %zu Sent:\n%s\033[0m\n", index(), buf);
       send(conn, &size, sizeof(size_t), 0);
       send(conn, buf, size, 0);
       close(conn);
@@ -355,10 +356,10 @@ class KVStore : public Object {
         exit(1);
       }
       char buf[10000];
-      int rd = 0;
+      size_t rd = 0;
       while (rd != size) rd += read(req, buf + rd, size - rd);
       MessageSerializer s;
-      printf("\033[0;34mReceived:\n%s\033[0m\n", buf);
+      printf("\033[0;34mNode %zu Received:\n%s\033[0m\n", index(), buf);
       Message* msg = s.get_message(buf);
       close(req);
       return msg;
@@ -422,7 +423,6 @@ class KVStore : public Object {
       * Depending on the message kind, perform some action.
       */
     void begin_receiving() {
-      printf("CALLED\n");
       struct timeval tv;
       tv.tv_sec = 0;
       tv.tv_usec = 0;
