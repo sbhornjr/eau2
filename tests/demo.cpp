@@ -33,12 +33,10 @@ sockaddr_in server_ip;
 size_t server_port;
 NodeInfo* node_info;
 const char* server_ip_str;
+KVStore* kv;
 
 void producer() {
   cout << "Ran Producer" << endl;
-
-  KVStore* kv = new KVStore(node_info, num_nodes, this_node, server_ip_str, server_port);
-  NetworkThread n1(kv);
 
   // Store sum in a variable.
   double sum = 0;
@@ -50,7 +48,12 @@ void producer() {
     dc->push_back(i);
     sum += i;
   }
+
+  cout << "Ran Producer 0.75 " << endl;
   dc->finalize();
+
+  cout << "Ran Producer 1" << endl;
+
 
   // Create first dataframe.
   Schema scm;
@@ -73,19 +76,18 @@ void producer() {
   kv->put(mainK, ser_df);
   kv->put(check, ser_df2);
 
-  n1.join();
   delete df;
   delete df2;
   delete kv;
+
+  cout << "Finished Producer" << endl;
+
   delete ser_df;
   delete ser_df2;
 }
 
 void counter() {
   cout << "Ran Counter" << endl;
-
-  KVStore* kv = new KVStore(node_info, num_nodes, this_node, server_ip_str, server_port);
-  NetworkThread n2(kv);
 
   size_t SZ = 100 * 1000;
   double sum = 0;
@@ -110,27 +112,24 @@ void counter() {
   const char* ser_df3 = df3->serialize(df3);
   kv->put(verify, ser_df3);
 
-  n2.join();
   delete ser_df3;
   delete df3;
   delete kv;
+  cout << "Finished Counter" << endl;
 }
 
 void summarizer() {
   cout << "Ran Summarizer" << endl;
-
-  KVStore* kv = new KVStore(node_info, num_nodes, this_node, server_ip_str, server_port);
-  NetworkThread n3(kv);
 
   // Pull out two dataframes from the KV.
   DataFrame* result = result->get_dataframe(kv->getAndWait(verify));
   DataFrame* expected = expected->get_dataframe(kv->getAndWait(check));
   printf(expected->get_double(0,0)==result->get_double(0,0) ? "SUCCESS\n":"FAILURE\n");
 
-  n3.join();
   delete result;
   delete expected;
   delete kv;
+  cout << "Finished Summarizer, Press Ctrl-C" << endl;
 }
 
 void run(size_t this_node) {
@@ -161,7 +160,10 @@ int main(int argc, const char** argv) {
     node_info->address = my_ip;
     node_info->address.sin_port = htons(port);
 
+    kv = new KVStore(node_info, num_nodes, this_node, server_ip_str, server_port);
+    NetworkThread n1(kv);
     run(this_node);
 
+    n1.join();
     cout << "DONE" << endl;
 }

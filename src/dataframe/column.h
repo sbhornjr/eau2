@@ -508,6 +508,7 @@ public:
         if (done_) return;
         // the chunk is full
         if (chunk_->full_) {
+            cout << "Filled!!!!!" << endl;
             // increment size values
             ++size_;
 

@@ -81,6 +81,10 @@ class KVStore : public Object {
       delete me_;
 		}
 
+    size_t get_next_node() {
+      return next_node_;
+    }
+
     /** ----------------- MAP FUNCTIONALITY ----------------- **/
 
 		// Returns the amount of entries in this map
@@ -141,7 +145,7 @@ class KVStore : public Object {
 		 * @returns the serialized value that corresponds with the given key
 		 */
 		const char* getAndWait(Key* k) {
-      printf("Called me\n");
+      printf("GET AND WAIT CALLED\n");
       size_t to_node = k->getHomeNode();
       bool found = false;
       // No need for networking if key is in this node.
@@ -173,16 +177,24 @@ class KVStore : public Object {
 		 */
 		void put(Key* key, Chunk* value) {
 			// choose which node this chunk will go to
-			key->setHomeNode(next_node_);
+			key->setHomeNode(get_next_node());
+      cout << "I AM HERE0.5" << endl;
 			++next_node_;
-			if (next_node_ == num_nodes_) next_node_ = 0;
+      cout << "I AM HERE1" << endl;
+
+			if (next_node_ >= num_nodes_) next_node_ = 0;
 			// does this chunk belong here
+      cout << "I AM HERE2" << endl;
+
 			if (key->getHomeNode() == index()) {
+        cout << "I AM HERE3" << endl;
+
 				// yes - add to map
 				keys_->push_back(key);
 				values_->push_back(new String(cs_.serialize(value)));
 				++size_;
 			} else {
+        printf("TODO PUT KEY-CHUNK kvstore line 197\n");
 				// TODO: no - send to correct node
 			}
 		}
@@ -258,6 +270,8 @@ class KVStore : public Object {
         printf("Sent Directory to %zu\n", i);
         delete ipd;
       }
+
+      printf("Completed Server Initialization\n");
     }
 
     // Initialize a client node.
@@ -277,11 +291,15 @@ class KVStore : public Object {
       // Send a registration message.
       Register msg(index(), 0, msg_id_++, getMyIP(), port());
       send_m(&msg);
+      printf("Client %zu sent registration request.\n", index());
+
+
       // Receive a directory from server node.
       Directory* ipd = dynamic_cast<Directory*>(recv_m());
       NodeInfo** nodes = new NodeInfo*[num_nodes_];
       nodes[0] = nodes_[0];
       for (size_t i = 0; i < ipd->clients(); ++i) {
+        nodes[i+1] = new NodeInfo();
         nodes[i+1]->id = i+1;
         nodes[i+1]->address.sin_family = AF_INET;
         nodes[i+1]->address.sin_port = htons(ipd->ports()[i]);
@@ -291,9 +309,13 @@ class KVStore : public Object {
           exit(1); // Teardown? TODO
         }
       }
+      printf("Client %zu received directory.\n", index());
+
       delete[] nodes_;
       nodes_ = nodes; // replace the existing nodes with new nodes.
       delete ipd;
+
+      printf("Completed Client Initialization\n");
     }
 
     // Create a socket and bind it.
@@ -357,8 +379,13 @@ class KVStore : public Object {
 
     void put(Key* k, const char* value) {
       size_t to_node = k->getHomeNode();
-      Put p(index(), to_node, msg_id_++, k, value);
-      send_m(&p);
+      if (to_node == index()) {
+        keys_->push_back(k);
+        values_->push_back(new String(value));
+      } else {
+        Put p(index(), to_node, msg_id_++, k, value);
+        send_m(&p);
+      }
     }
 
     /* Returns the value stored for a key. If key does not belong to this
