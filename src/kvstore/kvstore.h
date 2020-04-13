@@ -362,11 +362,13 @@ class KVStore : public Object {
       sockaddr_in sender;
       socklen_t addrlen = sizeof(sender);
       int req = accept(sock_, (sockaddr*) &sender, &addrlen);
-      int size = 0;
+      size_t size = 0;
       if(read(req, &size, sizeof(size_t)) == 0) {
         printf("Unable to read");
         exit(1); // Teardown? TODO
       }
+      size = size;
+      printf("SIZE WAS: %d\n", size);
       char buf[size];
       int rd = 0;
       while (rd != size) rd += read(req, buf + rd, size - rd);
@@ -377,6 +379,10 @@ class KVStore : public Object {
       return msg;
     }
 
+    /**
+      * Inserts into KV store. If on the same node, no need to contact the
+      * network. Otherwise, send a Put message to the right node.
+      */
     void put(Key* k, const char* value) {
       size_t to_node = k->getHomeNode();
       if (to_node == index()) {
@@ -391,6 +397,11 @@ class KVStore : public Object {
     /* Returns the value stored for a key. If key does not belong to this
        node, contact the correct node via the network. */
     const char* get(Key* k) {
+      cout << (k->getName()->c_str()) << endl;
+      cout << k->getHomeNode() << endl;
+      cout << k->getCreatorID() << endl;
+
+
       size_t to_node = k->getHomeNode();
       // No need for networking if key is in this node.
       if (to_node == index()) {
@@ -410,6 +421,25 @@ class KVStore : public Object {
       }
     }
 
+    /**
+      * In response to a get message, send a reply with the value for the
+      * given key.
+      */
+    void reply(Key* k, size_t tgt) {
+      printf("called serialized reply\n");
+      const char* value = get(k);
+      printf("Value!!!!!!: %s", value);
+      printf("called serialized reply111\n");
+      Reply r(index(), tgt, ++msg_id_, value);
+      printf("called serialized reply222\n");
+      send_m(&r);
+    }
+
+
+    /**
+      * Infinitely loops while looking for messages that arrive.
+      * Depending on the message kind, perform some action.
+      */
     void begin_receiving() {
       printf("CALLED\n");
       struct timeval tv;
@@ -428,8 +458,18 @@ class KVStore : public Object {
           close(sock_);
           exit(1);
         }
-        for (size_t i =0; i <= sock_; ++i) {
-          recv_m();
+        for (int i = 0; i <= sock_; ++i) {
+          Message* received = recv_m();
+          MsgKind kind = received->get_kind();
+          if (kind == MsgKind::Get) {
+            Get* g_received = dynamic_cast<Get*>(received);
+            reply(g_received->get_key(), g_received->sender());
+          } else if (kind == MsgKind::Put)
+
+          {
+
+          }
+
         }
       }
     }

@@ -40,7 +40,7 @@ void producer() {
 
   // Store sum in a variable.
   double sum = 0;
-  double SZ = 100 * 1000;
+  double SZ = 10 * 10;
 
   // Create Double Column
   DoubleColumn* dc = new DoubleColumn(kv);
@@ -89,7 +89,7 @@ void producer() {
 void counter() {
   cout << "Ran Counter" << endl;
 
-  size_t SZ = 100 * 1000;
+  size_t SZ = 10 * 10;
   double sum = 0;
 
   // Grab dataframe belonging to mainK and do another summation.

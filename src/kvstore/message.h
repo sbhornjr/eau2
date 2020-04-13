@@ -132,6 +132,10 @@ public:
     : Message(MsgKind::Get, sender, target, id) {
         k_ = k;
     }
+
+    Key* get_key() {
+      return k_;
+    }
 };
 
 class WaitAndGet : public Message {
