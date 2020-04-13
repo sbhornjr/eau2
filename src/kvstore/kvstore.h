@@ -178,17 +178,11 @@ class KVStore : public Object {
 		void put(Key* key, Chunk* value) {
 			// choose which node this chunk will go to
 			key->setHomeNode(get_next_node());
-      cout << "I AM HERE0.5" << endl;
 			++next_node_;
-      cout << "I AM HERE1" << endl;
 
 			if (next_node_ >= num_nodes_) next_node_ = 0;
 			// does this chunk belong here
-      cout << "I AM HERE2" << endl;
-
 			if (key->getHomeNode() == index()) {
-        cout << "I AM HERE3" << endl;
-
 				// yes - add to map
 				keys_->push_back(key);
 				values_->push_back(new String(cs_.serialize(value)));
@@ -241,7 +235,6 @@ class KVStore : public Object {
     // clients.
     void server_init() {
       init_sock_();
-      printf("Server succeeded in binding.\n");
       nodes_ = new NodeInfo*[num_nodes_];
       nodes_[0] = me_;
       for(size_t i = 1; i < num_nodes_; ++i) nodes_[i] = new NodeInfo(); //->id = 0;
@@ -267,7 +260,6 @@ class KVStore : public Object {
       for (size_t i = 1; i < num_nodes_; ++i) {
         Directory* ipd = new Directory(index(), i, msg_id_++, num_nodes_ - 1, ports, addresses);
         send_m(ipd);
-        printf("Sent Directory to %zu\n", i);
         delete ipd;
       }
 
@@ -279,7 +271,6 @@ class KVStore : public Object {
       sleep(1);
       init_sock_();
 
-      printf("Client %zu succeeded in binding.\n", index());
       nodes_ = new NodeInfo*[1];
       nodes_[0] = new NodeInfo();
       nodes_[0]->id = 0;
@@ -291,8 +282,6 @@ class KVStore : public Object {
       // Send a registration message.
       Register msg(index(), 0, msg_id_++, getMyIP(), port());
       send_m(&msg);
-      printf("Client %zu sent registration request.\n", index());
-
 
       // Receive a directory from server node.
       Directory* ipd = dynamic_cast<Directory*>(recv_m());
@@ -309,13 +298,11 @@ class KVStore : public Object {
           exit(1); // Teardown? TODO
         }
       }
-      printf("Client %zu received directory.\n", index());
-
       delete[] nodes_;
       nodes_ = nodes; // replace the existing nodes with new nodes.
       delete ipd;
 
-      printf("Completed Client Initialization\n");
+      printf("Completed Client %zu Initialization\n", index());
     }
 
     // Create a socket and bind it.
@@ -365,11 +352,9 @@ class KVStore : public Object {
       size_t size = 0;
       if(read(req, &size, sizeof(size_t)) == 0) {
         printf("Unable to read");
-        exit(1); // Teardown? TODO
+        exit(1);
       }
-      size = size;
-      printf("SIZE WAS: %d\n", size);
-      char buf[size];
+      char buf[10000];
       int rd = 0;
       while (rd != size) rd += read(req, buf + rd, size - rd);
       MessageSerializer s;
@@ -426,12 +411,8 @@ class KVStore : public Object {
       * given key.
       */
     void reply(Key* k, size_t tgt) {
-      printf("called serialized reply\n");
-      const char* value = get(k);
-      printf("Value!!!!!!: %s", value);
-      printf("called serialized reply111\n");
+      const char* value = getAndWait(k);
       Reply r(index(), tgt, ++msg_id_, value);
-      printf("called serialized reply222\n");
       send_m(&r);
     }
 
