@@ -1,8 +1,8 @@
 #include "helper.h"
-#include "map.h"
 #include "dataframe.h"
 #include "sorer.h"
-#include "network_impl.h"
+#include "kvstore.h"
+#include "thread.h"
 #include <string>
 #include <iostream>
 #include <stdlib.h>
@@ -12,8 +12,7 @@ using namespace std;
 /**
   * This file runs the Milestone 3 Demo with a Network Implementation.
   * The previous submission demonstrated this with a Threaded Implementation.
-  * In its current state, we were only able to get the server/client nodes
-  * initialized without linking in a KV Store.
+  *
   * @authors armani.a@husky.neu.edu, horn.s@husky.neu.edu
   */
 
@@ -24,93 +23,122 @@ Key* mainK = new Key(m,0);
 Key* verify = new Key(v,0);
 Key* check = new Key(c,0);
 
-void producer(KVStore* kc, NodeInfo* node_info, size_t num_nodes) {
 
-    // Start network with server.
-    Network* n = new Network(node_info, num_nodes);
-    n->server_init();
+// Variable declarations (to avoid passing many parameters around)
+size_t this_node;
+size_t num_nodes;
+sockaddr_in my_ip;
+size_t port;
+sockaddr_in server_ip;
+size_t server_port;
+NodeInfo* node_info;
+const char* server_ip_str;
 
-/**
-    // Store sum in a variable.
-    double sum = 0;
+void producer() {
+  cout << "Ran Producer" << endl;
 
-    // Create Double Column
-    DoubleColumn* dc = new DoubleColumn(kc);
-    for (double i = 100 * 1000; i > 0; --i) {
-      dc->push_back(i);
-      sum += i;
-    }
-    dc->finalize();
+  KVStore* kv = new KVStore(node_info, num_nodes, this_node, server_ip_str, server_port);
+  NetworkThread n1(kv);
 
-    // Create first dataframe.
-    Schema scm;
-    DataFrame* df = new DataFrame(scm, kc);
-    df->add_column(dc);
+  // Store sum in a variable.
+  double sum = 0;
+  double SZ = 100 * 1000;
 
-    // Create Double Column that stores the sum.
-    DoubleColumn sumStorage = new DoubleColumn(kc);
-    sumStorage->push_back(sum);
+  // Create Double Column
+  DoubleColumn* dc = new DoubleColumn(kv);
+  for (double i = SZ; i > 0; --i) {
+    dc->push_back(i);
+    sum += i;
+  }
+  dc->finalize();
 
-    // Create second dataframe.
-    Schema scm2;
-    DataFrame* df2 = new DataFrame(scm2, kc);
-    df2->add_column(sumStorage);
+  // Create first dataframe.
+  Schema scm;
+  DataFrame* df = new DataFrame(scm, kv);
+  df->add_column(dc);
 
-    const char* ser_df = df->serialize(df);
+  // Create Double Column that stores the sum.
+  DoubleColumn* sumStorage = new DoubleColumn(kv);
+  sumStorage->push_back(sum);
+  sumStorage->finalize();
 
-    delete df;
-    delete[] ser_df;
-    delete kc;
-    */
-    delete n;
+  // Create second dataframe.
+  Schema scm2;
+  DataFrame* df2 = new DataFrame(scm2, kv);
+  df2->add_column(sumStorage);
+
+  // Put serialized DF's into the KV store.
+  const char* ser_df = df->serialize(df);
+  const char* ser_df2 = df2->serialize(df2);
+  kv->put(mainK, ser_df);
+  kv->put(check, ser_df2);
+
+  n1.join();
+  delete df;
+  delete df2;
+  delete kv;
+  delete ser_df;
+  delete ser_df2;
 }
 
-void counter(KVStore* kc, NodeInfo* node_info, size_t num_nodes,
-                const char* server_adr, size_t server_port) {
+void counter() {
+  cout << "Ran Counter" << endl;
 
-  // Start client in network.
-  Network* n = new Network(node_info, num_nodes);
-  n->client_init(server_adr, server_port);
-  //n->begin_receiving();
-/*
-  size_t SZ = 100*1000;
-  DataFrame* v = getKVStore()->getAndWait(mainK);
+  KVStore* kv = new KVStore(node_info, num_nodes, this_node, server_ip_str, server_port);
+  NetworkThread n2(kv);
+
+  size_t SZ = 100 * 1000;
   double sum = 0;
-  for (size_t i = 0; i < SZ; ++i) {
-    sum += v->get_double(0,i);
-  }
+
+  // Grab dataframe belonging to mainK and do another summation.
+  DataFrame* v = v->get_dataframe(kv->getAndWait(mainK));
+  for (size_t i = 0; i < SZ; ++i) sum += v->get_double(0, i);
   printf("The sum is %f", sum);
   delete v;
-  df3 = df3->from_scalar(verify, getKVStore(), kc_, sum);
-  */
 
-  delete n;
+  // Create Double Column that stores the sum.
+  DoubleColumn* sumStorage = new DoubleColumn(kv);
+  sumStorage->push_back(sum);
+  sumStorage->finalize();
+
+  // Create verify dataframe.
+  Schema scm;
+  DataFrame* df3 = new DataFrame(scm, kv);
+  df3->add_column(sumStorage);
+
+  // Put serialized dataframe into KV.
+  const char* ser_df3 = df3->serialize(df3);
+  kv->put(verify, ser_df3);
+
+  n2.join();
+  delete ser_df3;
+  delete df3;
+  delete kv;
 }
 
-void summarizer(KVStore* kc, NodeInfo* node_info, size_t num_nodes,
-                const char* server_adr, size_t server_port) {
+void summarizer() {
+  cout << "Ran Summarizer" << endl;
 
+  KVStore* kv = new KVStore(node_info, num_nodes, this_node, server_ip_str, server_port);
+  NetworkThread n3(kv);
 
-  // Start client in network.
-  Network* n = new Network(node_info, num_nodes);
-  n->client_init(server_adr, server_port);
-  //n->begin_receiving();
-                  /*
-  DataFrame* result = getKVStore()->getAndWait(verify);
-  DataFrame* expected = getKVStore()->getAndWait(check);
+  // Pull out two dataframes from the KV.
+  DataFrame* result = result->get_dataframe(kv->getAndWait(verify));
+  DataFrame* expected = expected->get_dataframe(kv->getAndWait(check));
   printf(expected->get_double(0,0)==result->get_double(0,0) ? "SUCCESS\n":"FAILURE\n");
+
+  n3.join();
   delete result;
   delete expected;
-  */
-  delete n;
+  delete kv;
 }
 
-/**
-  * Called in the event that the correct function/job
-  * for this node could not be found.
-  */
-void unspecified(size_t num) {
-  cout << "Cannot determine what to do for this node #" + num << endl;
+void run(size_t this_node) {
+  switch(this_node) {
+    case 0:   producer();     break;
+    case 1:   counter();      break;
+    case 2:   summarizer();
+   }
 }
 
 int main(int argc, const char** argv) {
@@ -119,29 +147,21 @@ int main(int argc, const char** argv) {
         exit(1);
     }
 
-    size_t this_node = stoi(argv[1]);
-    size_t num_nodes = stoi(argv[2]);
-    sockaddr_in my_ip;
-    size_t port = stoi(argv[4]);
-    sockaddr_in server_ip;
-    size_t server_port = stoi(argv[6]);
-
+    // Read command line args and set values.
+    this_node = stoi(argv[1]);
+    num_nodes = stoi(argv[2]);
     inet_pton(AF_INET, argv[3], &my_ip.sin_addr);
+    port = stoi(argv[4]);
     inet_pton(AF_INET, argv[5], &server_ip.sin_addr);
+    server_ip_str = argv[5];
+    server_port = stoi(argv[6]);
 
-    NodeInfo* node_info = new NodeInfo();
+    node_info = new NodeInfo();
     node_info->id = this_node;
     node_info->address = my_ip;
     node_info->address.sin_port = htons(port);
 
-    NetworkThread nt(node_info, num_nodes, 100, argv[5], server_port);
-
-  //  KVStore* kc = new KVStore(num_nodes, this_node);
-  //  KDFMap* kv = new KDFMap(this_node, kc);
-
-  //  DemoThread dt(this_node, 200, kv, kc);
-
-    delete node_info;
+    run(this_node);
 
     cout << "DONE" << endl;
 }

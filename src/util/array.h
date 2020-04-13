@@ -403,14 +403,14 @@ public:
      * @param n: number of doubles in the args
      * @param ...: the doubles, handled by va_list etc.
      */
-    DoubleArray(int n, ...) {
+    DoubleArray(double n, ...) {
         set_type_('D');
 
         // each bool* in arr_ will be of size
         double* doubles = new double[ARR_SIZE];
 
         // set the number of num_arr_ we will have based on n
-        if (n % ARR_SIZE == 0) num_arr_ = n / ARR_SIZE;
+        if ((size_t)ceil(n) % ARR_SIZE == 0) num_arr_ = n / ARR_SIZE;
         else num_arr_ = (n / ARR_SIZE) + 1;
 
         // initialize arr_ and n

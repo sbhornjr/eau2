@@ -7,7 +7,6 @@
 #include <chrono>
 #include <cstdio>
 #include "message.h"
-#include "thread.h"
 #include "key.h"
 #include <unistd.h>
 #include <sys/socket.h>
@@ -62,7 +61,7 @@ class KVStore : public Object {
 
     KVStore(NodeInfo* n, size_t num_nodes, size_t this_node,
             const char* server_adr, size_t server_port) {
-			assert(num_nodes_ != 0);
+			assert(num_nodes != 0);
       keys_ = new KeyArray();
 			values_ = new StringArray();
 			num_nodes_ = num_nodes;
@@ -82,7 +81,7 @@ class KVStore : public Object {
       delete me_;
 		}
 
-    /** MAP FUNCTIONALITY **/
+    /** ----------------- MAP FUNCTIONALITY ----------------- **/
 
 		// Returns the amount of entries in this map
 		size_t size() {
@@ -139,11 +138,30 @@ class KVStore : public Object {
 		/**
 		 * Gets the value at a specific key. Blocking.
 		 * @param key: the key whose value we want to get
-		 * @returns the value that corresponds with the given key
+		 * @returns the serialized value that corresponds with the given key
 		 */
-		Chunk* getAndWait(Key* key) {
-			// TODO
-			return nullptr;
+		const char* getAndWait(Key* k) {
+      printf("Called me\n");
+      size_t to_node = k->getHomeNode();
+      bool found = false;
+      // No need for networking if key is in this node.
+      if (to_node == index()) {
+        while(!found) {
+          for (size_t i = 0; i < keys_->size(); i++) {
+            if (keys_->get(i)->equals(k)) {
+              found = true;
+              return values_->get(i)->c_str();
+            }
+          }
+        }
+      } else {
+        // Need to request from a different node.
+        // TODO FIX BLOCKING
+          Get g(index(), to_node, msg_id_++, k);
+          send_m(&g);
+          Reply* r = dynamic_cast<Reply*>(recv_m());
+          return r->value_;
+      }
 		}
 
 		/**
@@ -194,7 +212,8 @@ class KVStore : public Object {
 			return values_;
 		}
 
-    /** NETWORK FUNCTIONALITY **/
+    /** ----------------- NETWORK FUNCTIONALITY ----------------- **/
+
     // Returns index of the node.
     size_t index() { return me_->id; }
 
@@ -239,8 +258,6 @@ class KVStore : public Object {
         printf("Sent Directory to %zu\n", i);
         delete ipd;
       }
-
-      //thread listening_thread(begin_receiving());
     }
 
     // Initialize a client node.
@@ -277,8 +294,6 @@ class KVStore : public Object {
       delete[] nodes_;
       nodes_ = nodes; // replace the existing nodes with new nodes.
       delete ipd;
-
-      //thread listening_thread(begin_receiving());
     }
 
     // Create a socket and bind it.
@@ -346,6 +361,8 @@ class KVStore : public Object {
       send_m(&p);
     }
 
+    /* Returns the value stored for a key. If key does not belong to this
+       node, contact the correct node via the network. */
     const char* get(Key* k) {
       size_t to_node = k->getHomeNode();
       // No need for networking if key is in this node.
@@ -366,13 +383,13 @@ class KVStore : public Object {
       }
     }
 
-  /**  void begin_receiving() {
+    void begin_receiving() {
+      printf("CALLED\n");
       struct timeval tv;
       tv.tv_sec = 0;
       tv.tv_usec = 0;
       fd_set read_fds;
 
-      time_t since_last_msg_sent = time(NULL);
       int status;
 
       while(1) {
@@ -389,5 +406,4 @@ class KVStore : public Object {
         }
       }
     }
-    **/
 };

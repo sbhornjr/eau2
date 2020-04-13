@@ -8,6 +8,7 @@ build:
 	cd ./src/util; cp *.h ../../tests/test-data
 	cd ./src/kvstore; cp *.h ../../tests/test-data
 	cd ./src/app; cp *.h ../../tests/test-data
+	cd ./tests; cp demo.cpp Makefile ./test-data
 	cd ./tests; cp main.cpp Makefile ./test-data
 	cd ./data; cp data.sor ../tests/test-data
 	clear
@@ -23,6 +24,7 @@ test:
 	cd ./src/util; cp *.h ../../tests/test-data
 	cd ./src/kvstore; cp *.h ../../tests/test-data
 	cd ./src/app; cp *.h ../../tests/test-data
+	cd ./tests; cp demo.cpp Makefile ./test-data
 	cd ./tests; cp main.cpp Makefile ./test-data
 	cd ./data; cp data.sor ../tests/test-data
 	clear
@@ -38,6 +40,7 @@ valgr:
 	cd ./src/util; cp *.h ../../tests/test-data
 	cd ./src/kvstore; cp *.h ../../tests/test-data
 	cd ./src/app; cp *.h ../../tests/test-data
+	cd ./tests; cp demo.cpp Makefile ./test-data
 	cd ./tests; cp main.cpp Makefile ./test-data
 	cd ./data; cp data.sor ../tests/test-data
 	clear

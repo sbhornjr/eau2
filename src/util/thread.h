@@ -1,5 +1,6 @@
 #include "object.h"
 #include "string.h"
+#include "kvstore.h"
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -64,4 +65,22 @@ public:
 
     // Notify all threads waiting on this lock
     void notify_all() { cv_.notify_all(); }
+};
+
+/**
+  * A thread dedicated to keeping a network node alive and receiving messages.
+  * @authors: armani.a@husky.neu.edu, horn.s@husky.neu.edu
+  */
+class NetworkThread : public Thread {
+public:
+  KVStore* k_;
+
+  NetworkThread(KVStore* k) {
+    k_ = k;
+    start();
+  }
+
+  void run() {
+    k_->begin_receiving();
+  }
 };
