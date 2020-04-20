@@ -10,6 +10,7 @@
 #include "string.h"
 #include "array.h"
 #include "kvstore.h"
+#include "message.h"
 
 /****************************************************************************
  * DataFrame::
@@ -636,19 +637,19 @@ DataFrame* KVStore::getAndWait(Key* key) {
       }
     }
   } else {
-    //cout << "I AM HERE AND I AM INDEX " << index() << endl;
     // Need to request from a different node.
     // TODO FIX BLOCKING
     bool had_it = false;
     const char* val;
     while (!had_it) {
-      //cout << "a" << endl;
       Get g(index(), to_node, msg_id_++, key);
-      //cout << "b" << endl;
       send_m(&g);
-      //cout << "c" << endl;
-      Reply* r = dynamic_cast<Reply*>(recv_m());
-      //cout << "d" << endl;
+      Message* msg = recv_m();
+      while(msg->kind_ != MsgKind::Reply) {
+        handle_message(msg);
+        msg = recv_m();
+      }
+      Reply* r = dynamic_cast<Reply*>(msg);
       if (r->had_it_) {
         had_it = true;
         val = r->value_;

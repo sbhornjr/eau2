@@ -20,7 +20,7 @@ String* m = new String("main");
 String* v = new String("verif");
 String* c = new String("ck");
 Key* mainK = new Key(m,(int)0);
-Key* verify = new Key(v,(int)0);
+Key* verify = new Key(v,(int)1);
 Key* check = new Key(c,(int)0);
 
 
@@ -82,18 +82,14 @@ void producer() {
 
   cout << "Ran Producer E" << endl;
 
-  // make sure all nodes are dead
-  while (kv->get_num_dead() != num_nodes - 1) {
-    continue;
-  }
-
   delete df;
   delete df2;
-  delete kv;
 
   delete ser_df;
   delete ser_df2;
   cout << "Finished Producer" << endl;
+
+  kv->teardown();
 }
 
 void counter() {
@@ -135,10 +131,8 @@ void counter() {
 
   delete ser_df3;
   delete df3;
-  delete kv;
-  cout << "Finished Counter" << endl;
-
   kv->teardown();
+  cout << "Finished Counter" << endl;
 }
 
 void summarizer() {
@@ -151,10 +145,8 @@ void summarizer() {
 
   delete result;
   delete expected;
-  delete kv;
-  cout << "Finished Summarizer, Press Ctrl-C" << endl;
-
   kv->teardown();
+  cout << "Finished Summarizer, Press Ctrl-C" << endl;
 }
 
 void run(size_t this_node) {
@@ -189,8 +181,16 @@ int main(int argc, const char** argv) {
     NetworkThread n1(kv);
     run(this_node);
 
-    cout << " *****************OUT OF RUN******************* " << endl;
+    cout << " *****************" << this_node << " OUT OF RUN******************* " << endl;
+
+    // make sure all nodes are dead
+    while (kv->get_num_done() != num_nodes - 1) {
+      continue;
+    }
 
     n1.join();
+
+    delete kv;
+
     cout << "DONE" << endl;
 }

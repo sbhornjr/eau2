@@ -47,7 +47,7 @@ class KVStore : public Object {
     NodeInfo** nodes_;  // All nodes in the system.
     int sock_;         // Socket of this node.
     size_t msg_id_;    // Unique message id that will increment each time.
-    size_t num_dead_;  // number of nodes that have turned off
+    size_t num_done_;  // number of nodes that are complete
 
 		KVStore() {
 			keys_ = new KeyArray();
@@ -67,7 +67,7 @@ class KVStore : public Object {
 			values_ = new StringArray();
 			num_nodes_ = num_nodes;
 			next_node_ = 0;
-      num_dead_ = 0;
+      num_done_ = 0;
 
       me_ = n;
       msg_id_ = 0;
@@ -323,7 +323,7 @@ class KVStore : public Object {
         exit(1); // Teardown? TODO
       }
       const char* buf = s.serialize(msg);
-      size_t size = strlen(buf);
+      size_t size = strlen(buf) + 1;
       //printf("SIZE OF SENT MESSAGE WAS %zu\n", size);
       if (size < 5000) printf("\033[0;33mNode %zu Sent:\n%s\033[0m\n", index(), buf);
       else printf("\033[0;33mNode %zu Sent:\n%c\033[0m\n", index(), (char)msg->get_kind());
@@ -427,13 +427,37 @@ class KVStore : public Object {
 
     // tell the server we are done
     void teardown() {
-      Kill kill(index(), 0, ++msg_id_);
-      send_m(&kill);
+      for (size_t i = 0; i < num_nodes_; ++i) {
+        if (i != index()) {
+          Kill kill(index(), i, ++msg_id_);
+          send_m(&kill);
+        }
+      }
     }
 
     // get the number of nodes that are done
-    size_t get_num_dead() {
-      return num_dead_;
+    size_t get_num_done() {
+      return num_done_;
+    }
+
+    /** handle what to do with a received message */
+    void handle_message(Message* received) {
+      MsgKind kind = received->get_kind();
+      if (kind == MsgKind::Get) {
+        Get* g_received = dynamic_cast<Get*>(received);
+        reply(g_received->get_key(), g_received->sender());
+      } else if (kind == MsgKind::Put)
+      {
+        Put* p_received = dynamic_cast<Put*>(received);
+        put(p_received->get_key(), p_received->get_value());
+      } else if (kind == MsgKind::WaitAndGet)
+      {
+        WaitAndGet* w_received = dynamic_cast<WaitAndGet*>(received);
+        replyAndWait(w_received->get_key(), w_received->sender());
+      } else if (kind == MsgKind::Kill)
+      {
+        num_done_++;
+      }
     }
 
     /**
@@ -459,22 +483,7 @@ class KVStore : public Object {
         }
         for (int i = 0; i <= sock_; ++i) {
           Message* received = recv_m();
-          MsgKind kind = received->get_kind();
-          if (kind == MsgKind::Get) {
-            Get* g_received = dynamic_cast<Get*>(received);
-            reply(g_received->get_key(), g_received->sender());
-          } else if (kind == MsgKind::Put)
-          {
-            Put* p_received = dynamic_cast<Put*>(received);
-            put(p_received->get_key(), p_received->get_value());
-          } else if (kind == MsgKind::WaitAndGet)
-          {
-            WaitAndGet* w_received = dynamic_cast<WaitAndGet*>(received);
-            replyAndWait(w_received->get_key(), w_received->sender());
-          } else if (kind == MsgKind::Kill)
-          {
-            num_dead_++;
-          }
+          handle_message(received);
         }
       }
     }
