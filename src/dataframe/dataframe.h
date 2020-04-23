@@ -649,7 +649,6 @@ DataFrame* KVStore::getAndWait(Key* key) {
 
       // Handle other types of messages while waiting for a reply.
       while(msg->kind_ != MsgKind::Reply){
-      cout << "\033[0;31m"<< "IM NOT A REPLY " << index() <<  "\033[0m" << endl;
         handle_message(msg);
         msg = recv_m();
       }
@@ -660,8 +659,7 @@ DataFrame* KVStore::getAndWait(Key* key) {
         val = r->value_;
       } else {
         // Try again until the reply has a value.
-        cout << "\033[0;31mTRYING AGAIN\033[0m" << endl;
-
+        cout << "\033[0;31mNODE DID NOT HAVE VALUE. TRYING AGAIN.\033[0m" << endl;
         getAndWait(key);
       }
     }

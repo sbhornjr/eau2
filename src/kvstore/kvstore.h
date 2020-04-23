@@ -373,16 +373,11 @@ class KVStore : public Object {
     /* Returns the value stored for a key. If key does not belong to this
        node, contact the correct node via the network. */
     void getChars(Key* k, size_t tgt) {
-      cout << (k->getName()->c_str()) << endl;
-      cout << k->getHomeNode() << endl;
-      cout << k->getCreatorID() << endl;
-
+    
       size_t to_node = k->getHomeNode();
       assert(to_node == index());
       // No need for networking if key is in this node.
       if (to_node == index()) {
-        cout << "\033[0;31mALERT!!!! \033[0m" <<  index() << endl;
-
         for (size_t i = 0; i < keys_->size(); i++) {
           if (keys_->get(i)->equals(k)) {
             Reply r(index(), tgt, ++msg_id_, values_->get(i)->c_str(), 1);
@@ -446,22 +441,22 @@ class KVStore : public Object {
     void handle_message(Message* received) {
       MsgKind kind = received->get_kind();
       if (kind == MsgKind::Get) {
-        cout << "\033[0;31mI was a GET\033[0m" << endl;
+        cout << "\033[0;31mHANDLING GET\033[0m" << endl;
 
         Get* g_received = dynamic_cast<Get*>(received);
         reply(g_received->get_key(), g_received->sender());
       } else if (kind == MsgKind::Put) {
-        cout << "\033[0;31mI was a PUT\033[0m" << endl;
+        cout << "\033[0;31mHANDLING PUT\033[0m" << endl;
 
         Put* p_received = dynamic_cast<Put*>(received);
         put(p_received->get_key(), p_received->get_value());
       } else if (kind == MsgKind::WaitAndGet) {
-        cout << "\033[0;31mI was a WGET\033[0m" << endl;
+        cout << "\033[0;31mHANDLING WAITANDGET\033[0m" << endl;
 
         WaitAndGet* w_received = dynamic_cast<WaitAndGet*>(received);
         replyAndWait(w_received->get_key(), w_received->sender());
       } else if (kind == MsgKind::Kill) {
-        cout << "\033[0;34m"<< "A NODE WAS KILLED" << "\033[0m" << endl;
+        cout << "\033[0;34m"<< "NODE IN NETWORK WAS KILLED" << "\033[0m" << endl;
         num_done_++;
       }
     }
